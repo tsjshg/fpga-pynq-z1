@@ -26,9 +26,11 @@ path yourself: RTL, DMA plumbing, quantization and the host–board split.
 
 ## Development journal
 
-How this got built, one stage at a time, with the wrong turns and later corrections left in:
-[**docs/**](docs/). There are five illustrated entries, from the first DDR bandwidth probe to
-end-to-end generation, in English and Japanese.
+How this got built, one stage at a time, with the wrong turns and later corrections left in.
+There are five illustrated entries, from the first DDR bandwidth probe to end-to-end generation,
+in English and Japanese.
+
+**Read it online: <https://tsjshg.github.io/fpga-pynq-z1/>** (source in [`docs/`](docs/))
 
 ## How it works
 
@@ -257,7 +259,7 @@ The rest records the steps that led here, one experiment at a time: DDR bandwidt
 MAC array, the first ternary engine, attention for SmolLM2, and so on. That includes
 `bench/`, the other `pynq/dma_*.py` and `hw/build_*.tcl`, and the other generators in `hw/rtl/`.
 Those scripts take the bitstream path as their first argument.
-The illustrated write-ups of every stage are in [`docs/`](docs/).
+The illustrated write-ups of every stage are in [`docs/`](docs/), published at <https://tsjshg.github.io/fpga-pynq-z1/>.
 
 ## License
 

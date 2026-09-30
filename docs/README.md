@@ -6,10 +6,12 @@ One entry per stretch of work, written at the time. Wrong turns and later correc
 PYNQ-Z1 の FPGA に自分で書いた回路で三値の言語モデルを動かすまでの記録です。
 区切りごとにその時点で書いたもので、途中の誤りと後からの訂正もそのまま残してあります。
 
-Each entry is a self-contained HTML page. GitHub shows `.html` files as source, so to read them,
-clone the repository and open [`index.html`](index.html) in a browser.
-各回は 1 枚で完結した HTML です。GitHub 上ではソースとして表示されるので、
-クローンしてブラウザで [`index.html`](index.html) を開いてください。
+**Read it online / Web で読む: <https://tsjshg.github.io/fpga-pynq-z1/>**
+
+Each entry is a self-contained HTML page, and GitHub shows `.html` files as source. Use the site
+above, or clone the repository and open [`index.html`](index.html).
+各回は 1 枚で完結した HTML です。GitHub 上ではソースとして表示されるので、上のサイトで読むか、
+クローンして [`index.html`](index.html) を開いてください。
 
 | # | Date | Stages | English | 日本語 | Later corrections / 後の訂正 |
 |---|---|---|---|---|---|
