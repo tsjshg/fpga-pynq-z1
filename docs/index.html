@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PYNQ-Z1 Journal</title>
+<meta name="description" content="Development journal: running a ternary LLM on hand-written circuits in a PYNQ-Z1's FPGA fabric. English and Japanese.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=M+PLUS+1+Code:wght@400;500;700&display=swap">
+<style>
+  /* 各回の資料（02〜05）と同じ色と書体 */
+  :root{
+    --paper:#F4F6F7; --card:#FFFFFF;
+    --ink:#1A2027; --ink-2:#5C666F; --ink-3:#8B959D;
+    --rule:#D9DFE3; --rule-2:#EAEEF0;
+    --path:#1F5FA9; --ddr:#C0701A; --tri:#136B57; --attn:#6B4FA0; --entry:#0B6E67;
+    --wrong:#A33A3A; --wrong-soft:#F7E9E9;
+    --serif:"Shippori Mincho B1",'Hiragino Mincho ProN',"Yu Mincho",serif;
+    --sans:"Zen Kaku Gothic New",'Hiragino Sans',"Yu Gothic",system-ui,sans-serif;
+    --mono:"M PLUS 1 Code",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+      --rule:#2E363D; --rule-2:#232A30;
+      --path:#6FA8E8; --ddr:#E0A05B; --tri:#5CC4A7; --attn:#B49BE8; --entry:#4FCCBD;
+      --wrong:#DF8C8C; --wrong-soft:#33201F;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+    --rule:#2E363D; --rule-2:#232A30;
+    --path:#6FA8E8; --ddr:#E0A05B; --tri:#5CC4A7; --attn:#B49BE8; --entry:#4FCCBD;
+    --wrong:#DF8C8C; --wrong-soft:#33201F;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans);
+    font-size:16px; line-height:1.8; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 80px;}
+  @media (min-width:600px){ .wrap{padding:0 24px 96px;} }
+
+  header{padding:64px 0 36px;border-bottom:1px solid var(--rule);}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--ink-3);margin-bottom:18px;
+  }
+  h1{
+    font-family:var(--serif);font-weight:700;font-size:clamp(34px,6.4vw,52px);line-height:1.2;
+    margin:0 0 6px;text-wrap:balance;
+  }
+  h1 .ja{display:block;font-size:.5em;color:var(--ink-2);margin-top:8px;letter-spacing:.04em;}
+  .lede{margin:22px 0 0;display:grid;gap:12px;max-width:62ch;}
+  .lede p{margin:0;color:var(--ink-2);}
+  .lede p[lang="ja"]{font-size:14.5px;}
+  .lede a{color:var(--path);text-underline-offset:3px;}
+
+  .guide{
+    margin:30px 0 0;padding:14px 0 0;border-top:1px solid var(--rule-2);
+    font-size:13.5px;color:var(--ink-2);display:grid;gap:4px;
+  }
+  .guide b{color:var(--ink);font-weight:700;}
+
+  ol.entries{list-style:none;margin:0;padding:0;}
+  ol.entries > li{
+    display:grid;grid-template-columns:1fr;gap:10px;
+    padding:30px 0;border-bottom:1px solid var(--rule);
+  }
+  @media (min-width:600px){
+    ol.entries > li{grid-template-columns:128px 1fr;gap:24px;}
+  }
+  .meta{font-family:var(--mono);font-size:12px;color:var(--ink-3);display:flex;gap:14px;flex-wrap:wrap;align-items:baseline;}
+  @media (min-width:600px){ .meta{flex-direction:column;gap:2px;} }
+  .meta .no{font-size:26px;font-weight:700;line-height:1;color:var(--c);letter-spacing:.02em;}
+  .meta .stage{color:var(--ink-2);}
+
+  .body{display:grid;gap:10px;min-width:0;}
+  h2{margin:0;font-family:var(--serif);font-weight:700;font-size:clamp(22px,4.2vw,27px);line-height:1.35;text-wrap:balance;}
+  h2 a{color:inherit;text-decoration:none;}
+  h2 a:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px;}
+  h2 .ja{display:block;font-size:.62em;color:var(--ink-2);margin-top:4px;}
+  .sum{margin:0;max-width:62ch;}
+  .sum[lang="ja"]{font-size:14px;color:var(--ink-2);line-height:1.8;}
+  .read{display:flex;gap:18px;flex-wrap:wrap;font-size:13.5px;font-weight:500;}
+  .read a{color:var(--c);text-underline-offset:3px;}
+  .later{
+    margin:4px 0 0;padding:10px 14px;background:var(--wrong-soft);border-radius:3px;
+    font-size:13px;line-height:1.7;color:var(--ink-2);display:grid;gap:4px;max-width:62ch;
+  }
+  .later .lbl{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--wrong);}
+  .now{
+    font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--c);border:1px solid var(--c);border-radius:2px;padding:0 6px;align-self:start;justify-self:start;
+  }
+
+  a:focus-visible{outline:2px solid var(--path);outline-offset:3px;}
+  footer{margin-top:48px;font-size:13px;color:var(--ink-3);display:grid;gap:6px;}
+  footer a{color:var(--ink-2);text-underline-offset:3px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">PYNQ-Z1 · BitNet b1.58 · FPGA</div>
+  <h1>Development journal<span class="ja" lang="ja">開発記録</span></h1>
+  <div class="lede">
+    <p>
+      How a ternary language model ended up generating text on a hobbyist Zynq board, with the
+      matrix multiplications and attention running on circuits written by hand. One entry per stretch
+      of work, written at the time. Wrong turns and later corrections are left in.
+    </p>
+    <p lang="ja">
+      三値の言語モデルを、PYNQ-Z1 の FPGA に自分で書いた回路で動かすまでの記録です。
+      区切りごとにその時点で書いたもので、途中の誤りと後からの訂正もそのまま残してあります。
+    </p>
+    <p>
+      To run it yourself, see the <a href="https://github.com/tsjshg/fpga-pynq-z1#readme">repository README</a>.
+    </p>
+  </div>
+  <div class="guide">
+    <span><b>New to FPGAs?</b> Start with 01. <b>Just want the result?</b> Read 05.</span>
+    <span lang="ja"><b>FPGA が初めてなら</b> 01 から。<b>いまの到達点だけなら</b> 05 を。</span>
+  </div>
+</header>
+
+<ol class="entries">
+
+  <li style="--c:var(--entry)">
+    <div class="meta"><span class="no">01</span><span>2026-09-05</span><span class="stage">Stages 0–1</span></div>
+    <div class="body">
+      <h2><a href="en/01-cpu-to-fabric.html">From CPU to Fabric</a><span class="ja" lang="ja">CPU からファブリックへ</span></h2>
+      <p class="sum">What a Zynq chip is, why memory bandwidth rather than multipliers sets the speed limit, and the first measurement of how fast the fabric can read DDR.</p>
+      <p class="sum" lang="ja">Zynq とは何か、なぜ速さを決めるのが掛け算器ではなく帯域なのか、そして PL から DDR を読む速さを初めて測った話。FPGA 初心者向けの入口。</p>
+      <div class="read"><a href="en/01-cpu-to-fabric.html">Read in English</a><a href="ja/01-cpu-to-fabric.html" lang="ja">日本語で読む</a></div>
+      <div class="later">
+        <span class="lbl">Later corrected · 後の訂正</span>
+        <span>The "PL uses 74% of DDR" reading was wrong: it was the datapath width, not DDR (see 02). Notes marking this are in the page.</span>
+        <span lang="ja">「PL は DDR の 74%」という読みは誤りで、当たっていたのは道幅だった（02 を参照）。本文にも印を付けてある。</span>
+      </div>
+    </div>
+  </li>
+
+  <li style="--c:var(--path)">
+    <div class="meta"><span class="no">02</span><span>2026-09-08</span><span class="stage">Stage 2</span></div>
+    <div class="body">
+      <h2><a href="en/02-two-ceilings.html">Two Ceilings</a><span class="ja" lang="ja">二つの天井</span></h2>
+      <p class="sum">Separating two different limits — the datapath width on the fabric side and the DDR itself — and finding the real ceiling with two HP ports.</p>
+      <p class="sum" lang="ja">PL 側の道幅と DDR そのものという二つの天井を切り分け、HP ポート 2 本で本当の上限を見つけるまで。</p>
+      <div class="read"><a href="en/02-two-ceilings.html">Read in English</a><a href="ja/02-two-ceilings.html" lang="ja">日本語で読む</a></div>
+      <div class="later">
+        <span class="lbl">Later corrected · 後の訂正</span>
+        <span>1.97 GB/s was re-measured as 2.01 GB/s once the fixed overhead of each measurement was removed (see 04). The argument doesn't change.</span>
+        <span lang="ja">1.97 GB/s は、測定の固定費を除いて測り直すと 2.01 GB/s だった（04 を参照）。切り分けの筋は変わらない。</span>
+      </div>
+    </div>
+  </li>
+
+  <li style="--c:var(--tri)">
+    <div class="meta"><span class="no">03</span><span>2026-09-08</span><span class="stage">Stages 2–4</span></div>
+    <div class="body">
+      <h2><a href="en/03-the-wall-does-not-move.html">The Wall Doesn't Move</a><span class="ja" lang="ja">壁は動かない</span></h2>
+      <p class="sum">Computing right up to the bandwidth wall with an INT8 multiplier array, then getting 4.8× more weights through the same wall by going ternary — with zero DSP slices. An update adds the bad news: attention on the CPU dominates.</p>
+      <p class="sum" lang="ja">INT8 の掛け算器で壁まで計算し、三値にして同じ壁から 4.8 倍の重みを取り出すまで。DSP は 0 個。追記で、CPU に残した attention が全体を支配すると分かる。</p>
+      <div class="read"><a href="en/03-the-wall-does-not-move.html">Read in English</a><a href="ja/03-the-wall-does-not-move.html" lang="ja">日本語で読む</a></div>
+      <div class="later">
+        <span class="lbl">Later corrected · 後の訂正</span>
+        <span>Bandwidth figures here are 1–4% low (measurement overhead, see 04). The CPU baseline was compiled without NEON, so CPU times were about 1.8× too slow (see 04 and 05).</span>
+        <span lang="ja">帯域の数字は 1〜4% 低い（測定の固定費、04 を参照）。比較相手の CPU は NEON 無効で焼いていたので、CPU の時間は約 1.8 倍遅く出ていた（04・05 を参照）。</span>
+      </div>
+    </div>
+  </li>
+
+  <li style="--c:var(--attn)">
+    <div class="meta"><span class="no">04</span><span>2026-09-18</span><span class="stage">Stages 5a–5b</span></div>
+    <div class="body">
+      <h2><a href="en/04-reaching-the-wall.html">Reaching the Wall</a><span class="ja" lang="ja">壁に届いた</span></h2>
+      <p class="sum">Attention as a two-phase circuit. Softmax turns out to cost no bandwidth at all, and all four circuits sit at the DDR wall. Along the way, the way bandwidth had been measured since stage 1 turns out to be wrong.</p>
+      <p class="sum" lang="ja">attention を 2 相の回路にする。softmax は帯域を 1 バイトも食わず、4 本の回路がすべて DDR の壁に張り付く。途中で、段階1 からの帯域の測り方が間違っていたと分かる。</p>
+      <div class="read"><a href="en/04-reaching-the-wall.html">Read in English</a><a href="ja/04-reaching-the-wall.html" lang="ja">日本語で読む</a></div>
+    </div>
+  </li>
+
+  <li style="--c:var(--path)">
+    <div class="meta"><span class="no">05</span><span>2026-09-28</span><span class="stage">Stages 6–11</span></div>
+    <div class="body">
+      <h2><a href="en/05-end-to-end.html">It Runs End to End</a><span class="ja" lang="ja">通しで動いた</span></h2>
+      <span class="now">Current · 現在地</span>
+      <p class="sum">Rounding a normal model to ternary breaks it, so the project switches to a model trained ternary. Stream headers, a rebuilt attention core, scatter-gather DMA for the KV cache — and text generated on the board, with logits bit-identical to a Mac. 7.3 tok/s at 512 tokens of context.</p>
+      <p class="sum" lang="ja">普通のモデルを三値に丸めたら壊れたので、三値で学習したモデルに乗り換える。見出し付きストリーム、attention の作り直し、KV を流す SG 転送を経て、ボードで文章を生成。Mac と logits がビット単位で一致し、文脈 512 で 7.3 tok/s。</p>
+      <div class="read"><a href="en/05-end-to-end.html">Read in English</a><a href="ja/05-end-to-end.html" lang="ja">日本語で読む</a></div>
+    </div>
+  </li>
+
+</ol>
+
+<footer>
+  <span>Each entry is a single self-contained HTML page. Figures are inline SVG and follow your light/dark setting.</span>
+  <span lang="ja">各回は 1 枚の HTML で完結しています。図はインラインの SVG で、ライト/ダークの設定に従います。</span>
+  <span><a href="https://github.com/tsjshg/fpga-pynq-z1">github.com/tsjshg/fpga-pynq-z1</a></span>
+</footer>
+
+</div>
+</body>
+</html>

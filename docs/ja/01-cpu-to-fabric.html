@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CPU からファブリックへ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+
+<style>
+:root {
+  --ground:      #F6F8F6;
+  --surface:     #FFFFFF;
+  --surface-alt: #ECF1EE;
+  --ink:         #15201D;
+  --ink-soft:    #55625E;
+  --ink-faint:   #8B9793;
+  --rule:        #DBE3DF;
+  --rule-strong: #C0CCC7;
+  --accent:      #0B6E67;
+  --accent-deep: #084F4A;
+  --accent-wash: #E1F0EC;
+  --hot:         #B0700F;
+  --hot-wash:    #F9EEDD;
+  --good:        #2C6A3D;
+  --bad:         #9E2F27;
+  --diag-fill:   #FFFFFF;
+  --diag-alt:    #EDF2F0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0E1413;
+    --surface:     #161E1C;
+    --surface-alt: #1D2725;
+    --ink:         #E4ECE9;
+    --ink-soft:    #97A6A1;
+    --ink-faint:   #6B7975;
+    --rule:        #283430;
+    --rule-strong: #3B4A45;
+    --accent:      #4FCCBD;
+    --accent-deep: #82E2D5;
+    --accent-wash: #11302C;
+    --hot:         #E0A455;
+    --hot-wash:    #2E2416;
+    --good:        #6DBE83;
+    --bad:         #E0837B;
+    --diag-fill:   #161E1C;
+    --diag-alt:    #1D2725;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:      #0E1413;
+  --surface:     #161E1C;
+  --surface-alt: #1D2725;
+  --ink:         #E4ECE9;
+  --ink-soft:    #97A6A1;
+  --ink-faint:   #6B7975;
+  --rule:        #283430;
+  --rule-strong: #3B4A45;
+  --accent:      #4FCCBD;
+  --accent-deep: #82E2D5;
+  --accent-wash: #11302C;
+  --hot:         #E0A455;
+  --hot-wash:    #2E2416;
+  --good:        #6DBE83;
+  --bad:         #E0837B;
+  --diag-fill:   #161E1C;
+  --diag-alt:    #1D2725;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont,
+               'Hiragino Sans', 'Yu Gothic', sans-serif;
+  font-size: 15px;
+  line-height: 1.9;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 56px 24px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.mast { display: flex; flex-direction: column; gap: 12px; }
+.eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--accent);
+}
+h1 { font-size: 34px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+.standfirst { font-size: 16.5px; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 12px; color: var(--ink-faint);
+  display: flex; flex-wrap: wrap; gap: 18px;
+  padding-top: 8px; border-top: 1px solid var(--rule);
+}
+
+section { display: flex; flex-direction: column; gap: 20px; }
+h2.sec {
+  font-size: 23px; font-weight: 600; margin: 0;
+  padding-bottom: 10px; border-bottom: 1px solid var(--rule-strong); text-wrap: balance;
+}
+h3 { font-size: 15.5px; font-weight: 600; margin: 0; color: var(--accent-deep); }
+p { margin: 0; max-width: 68ch; }
+strong { font-weight: 600; }
+em { font-style: normal; background: var(--hot-wash); color: var(--ink); padding: .05em .3em; }
+code, .mono { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: .88em; }
+code { background: var(--surface-alt); padding: .1em .38em; border-radius: 2px; }
+ul { margin: 0; padding-left: 1.25em; max-width: 68ch; display: flex; flex-direction: column; gap: 8px; }
+li::marker { color: var(--ink-faint); }
+
+figure {
+  margin: 0; display: flex; flex-direction: column; gap: 12px;
+  border: 1px solid var(--rule); background: var(--surface); padding: 22px 20px 18px;
+}
+figure svg { display: block; width: 100%; height: auto; color: var(--ink); }
+.figscroll { overflow-x: auto; }
+figcaption { font-size: 13px; color: var(--ink-soft); line-height: 1.8; max-width: 70ch; }
+figcaption b { color: var(--ink); font-weight: 600; }
+
+.scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 480px; }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: top; }
+thead th {
+  background: var(--surface-alt); font-size: 11.5px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-soft); font-weight: 500; white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+td.num, th.num { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.hi td { background: var(--accent-wash); }
+
+.note {
+  padding: 16px 20px; border-left: 3px solid var(--accent); background: var(--accent-wash);
+  font-size: 14px; display: flex; flex-direction: column; gap: 8px;
+}
+.note .lbl {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-deep);
+}
+.note p { max-width: none; }
+
+.timeline { display: flex; flex-direction: column; border: 1px solid var(--rule); background: var(--surface); }
+.tl { display: grid; grid-template-columns: 78px 1fr; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--rule); }
+.tl:last-child { border-bottom: none; }
+.tl-d { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 12px; color: var(--accent); padding-top: 4px; }
+.tl-b { display: flex; flex-direction: column; gap: 3px; }
+.tl-b b { font-size: 14.5px; font-weight: 600; }
+.tl-b span { font-size: 13.5px; color: var(--ink-soft); line-height: 1.75; }
+
+dl.gloss { margin: 0; display: grid; grid-template-columns: 132px 1fr; gap: 10px 18px; font-size: 13.5px; }
+dl.gloss dt { font-weight: 600; color: var(--accent-deep); }
+dl.gloss dd { margin: 0; color: var(--ink-soft); line-height: 1.75; }
+@media (max-width: 560px) { dl.gloss { grid-template-columns: 1fr; gap: 2px 0; } dl.gloss dd { margin-bottom: 10px; } }
+
+.note.later { border-left-color: var(--hot); background: var(--hot-wash); }
+.note.later .lbl { color: var(--hot); }
+
+.next-up {
+  display: flex; flex-direction: column; gap: 6px;
+  border: 1px solid var(--hot); background: var(--hot-wash);
+  padding: 16px 20px;
+}
+.next-up .lbl {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--hot);
+}
+.next-up p { font-size: 14px; margin: 0; }
+.next-up a { color: var(--hot); font-weight: 600; }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<!-- nav -->
+<style>
+  body{margin:0}
+  img{max-width:100%}
+  .jnav{max-width:760px;margin:0 auto;padding:14px 16px 0;display:flex;flex-wrap:wrap;
+        gap:4px 18px;font-size:12.5px;line-height:1.7;opacity:.8}
+  .jnav.foot{padding:0 16px 40px}
+  .jnav a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
+  .jnav a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  .jnav .lang{margin-left:auto}
+  @media (min-width:600px){ .jnav{padding:14px 24px 0} .jnav.foot{padding:0 24px 40px} }
+</style>
+<!-- /nav -->
+</head>
+<body>
+<!-- nav -->
+<nav class="jnav" aria-label="開発記録のナビゲーション">
+  <a href="../index.html">開発記録の目次</a>
+  <a href="02-two-ceilings.html" rel="next">次: 二つの天井 →</a>
+  <a class="lang" href="../en/01-cpu-to-fabric.html" hreflang="en" lang="en">English</a>
+</nav>
+<!-- /nav -->
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">FPGA 推論アクセラレータ / 中間報告</div>
+  <h1>CPU からファブリックへ</h1>
+  <p class="standfirst">
+    小さな言語モデルを FPGA で速く動かす、という計画の現在地。
+    なぜ CPU では遅いのか、FPGA に移すと何が変わるのか、そして昨日それを初めて実測できた話。
+  </p>
+  <div class="meta">
+    <span>2026-09-05</span>
+    <span>実測: PYNQ-Z1 (XC7Z020)</span>
+    <span>前段: ADRFT1 (MPFS095T)</span>
+  </div>
+
+  <div class="next-up">
+    <span class="lbl">続きがあります — 2026-09-08 追記</span>
+    <p>
+      この資料は <strong>2026-09-05 時点</strong>の理解です。3日後に測り直したところ、
+      ここに書いた <strong>「PL は DDR の 74%」という読みが誤りだった</strong>ことが分かりました。
+      74% という数字は DDR ではなく、その手前にある<strong>もっと低い天井</strong>に張り付いていたものです。
+      結論の向きは変わらず、正しい値は <strong>93.6%（1.97 GB/s）</strong>でした。
+    </p>
+    <p>
+      経緯を残すため、この資料はそのままにしてあります。何がどう変わったかは
+      <a href="02-two-ceilings.html">「二つの天井」</a>を参照してください。
+      本文中の該当箇所にも印を付けてあります。
+    </p>
+  </div>
+</header>
+
+<section>
+  <h2 class="sec">この計画が目指していること</h2>
+  <p>
+    やりたいのは <strong>「量子化した小さめの推論モデルを、FPGA で作った自作の演算回路で動かす」</strong>ことです。
+    GPU を買えば速いのは分かっていて、目的は自分で作ることのほうにあります。
+  </p>
+  <p>
+    ただ、ここまでの調査と実測で、当初の見立てが2回ひっくり返りました。
+    この資料は、<strong>いま何が分かっていて、次に何をするのか</strong>を図で共有するためのものです。
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">図1 — そもそもこのチップは何なのか</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 380" role="img" aria-label="Zynqチップの構成図。左にPS（Cortex-A9が2個、Linuxが動く）、右にPL（空のファブリック、LUTとDSP）、下に共有のDDR3メモリ。PSはGP0ポートでPLを制御し、PLはHP0ポートを通ってDDRにアクセスする。">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="currentColor"></polygon>
+          </marker>
+          <marker id="arh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="var(--hot)"></polygon>
+          </marker>
+        </defs>
+
+        <!-- チップ外枠 -->
+        <rect x="30" y="26" width="660" height="180" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="5 4" opacity=".45"></rect>
+        <text x="42" y="46" font-size="11.5" fill="currentColor" opacity=".6">1つのチップの中</text>
+
+        <!-- PS -->
+        <rect x="60" y="62" width="250" height="118" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="76" y="86" font-size="13.5" font-weight="600" fill="currentColor">PS（プロセッサ側）</text>
+        <text x="76" y="110" font-size="12" fill="currentColor" opacity=".8">Cortex-A9 ×2  650 MHz</text>
+        <text x="76" y="130" font-size="12" fill="currentColor" opacity=".8">Linux が動いている</text>
+        <text x="76" y="156" font-size="11.5" fill="currentColor" opacity=".55">出荷時から完成している</text>
+
+        <!-- PL -->
+        <rect x="410" y="62" width="250" height="118" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.8"></rect>
+        <text x="426" y="86" font-size="13.5" font-weight="600" fill="var(--hot)">PL（ファブリック）</text>
+        <text x="426" y="110" font-size="12" fill="currentColor" opacity=".8">LUT 53,200 / DSP 220個</text>
+        <text x="426" y="130" font-size="12" fill="currentColor" opacity=".8">中身は空っぽ</text>
+        <text x="426" y="156" font-size="11.5" fill="var(--hot)">回路を自分で作って入れる</text>
+
+        <!-- GP0 -->
+        <line x1="310" y1="112" x2="404" y2="112" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"></line>
+        <text x="357" y="103" font-size="11" text-anchor="middle" fill="currentColor" opacity=".75">GP0</text>
+        <text x="357" y="130" font-size="11" text-anchor="middle" fill="currentColor" opacity=".6">PLを制御する細い道</text>
+
+        <!-- DDR -->
+        <rect x="235" y="292" width="250" height="62" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="360" y="317" font-size="13.5" font-weight="600" text-anchor="middle" fill="currentColor">DDR3 メモリ 512 MB</text>
+        <text x="360" y="337" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".7">道幅の上限 2.1 GB/s（理論値）</text>
+
+        <!-- PS -> DDR -->
+        <polyline points="185,180 185,246 300,246 300,286" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"></polyline>
+        <text x="150" y="232" font-size="11" fill="currentColor" opacity=".75">CPU のメモリアクセス</text>
+
+        <!-- PL -> DDR (HP0) -->
+        <polyline points="535,180 535,246 420,246 420,286" fill="none" stroke="var(--hot)" stroke-width="2.2" marker-end="url(#arh)"></polyline>
+        <text x="556" y="232" font-size="11" fill="var(--hot)">HP0 ＝ 昨日開通させた道</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>PS と PL は同じチップに同居し、同じ DDR メモリを共有している。</b>
+      PS は完成品の CPU。PL は「空っぽの回路の土地」で、そこに何を建てるかは自分で決める。
+      PL から DDR へ行く道が <b>HP ポート</b>（High Performance）で、昨日その道を1本開通させて、
+      どれだけの太さがあるのかを測った。
+    </figcaption>
+  </figure>
+
+  <p>
+    ここで大事なのは <em>PL は最初から空っぽ</em> だということです。DSP が 220 個載っていますが、
+    配線されていないので何もしません。何をする回路にするかを設計して、
+    <strong>ビットストリーム</strong>（回路の設計図を焼いたファイル）を作って流し込む、という手順を踏みます。
+  </p>
+  <p>
+    そして <strong>PL は勝手に DDR にアクセスできません。</strong>HP ポートという門が用意されていて、
+    そこを通る回路を自分で組んで初めてメモリに手が届きます。
+    ADRFT1 で行き詰まったのは、まさにこの門が塞がれていたからでした。
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">図2 — ファブリックの素材、LUT</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 300" role="img" aria-label="LUTの説明図。6本の入力線がLUTに入り1ビットが出る。LUTは64個の答えを持つ書き換え可能な早見表で、右側に2入力の例としてAND、OR、XORの3つの真理値表を並べ、表の中身を変えるだけで別の回路になることを示している。">
+        <defs>
+          <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="currentColor"></polygon>
+          </marker>
+        </defs>
+
+        <text x="30" y="52" font-size="12" fill="currentColor" opacity=".75">入力 6 ビット</text>
+        <line x1="30" y1="72" x2="119" y2="72" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="90" x2="119" y2="90" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="108" x2="119" y2="108" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="126" x2="119" y2="126" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="144" x2="119" y2="144" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="162" x2="119" y2="162" stroke="currentColor" stroke-width="1.2"></line>
+
+        <rect x="125" y="60" width="155" height="114" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.8"></rect>
+        <text x="202" y="98" font-size="16" font-weight="600" text-anchor="middle" fill="var(--hot)">LUT</text>
+        <text x="202" y="124" font-size="11.5" text-anchor="middle" fill="currentColor">64個の答えを持つ早見表</text>
+        <text x="202" y="146" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">中身は書き換えられる</text>
+
+        <line x1="280" y1="117" x2="336" y2="117" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"></line>
+        <text x="306" y="140" font-size="11" text-anchor="middle" fill="currentColor" opacity=".75">出力 1 ビット</text>
+
+        <line x1="350" y1="40" x2="350" y2="252" stroke="currentColor" stroke-width="1" opacity=".3"></line>
+
+        <text x="365" y="52" font-size="12" fill="currentColor" opacity=".75">表の中身を変えれば別の回路になる（2入力の例）</text>
+
+        <rect x="365" y="68" width="100" height="116" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1"></rect>
+        <text x="415" y="89" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">AND</text>
+        <line x1="365" y1="98" x2="465" y2="98" stroke="currentColor" stroke-width="1" opacity=".35"></line>
+        <text x="415" y="116" font-size="11.5" text-anchor="middle" fill="currentColor">0 0 → 0</text>
+        <text x="415" y="134" font-size="11.5" text-anchor="middle" fill="currentColor">0 1 → 0</text>
+        <text x="415" y="152" font-size="11.5" text-anchor="middle" fill="currentColor">1 0 → 0</text>
+        <text x="415" y="170" font-size="11.5" text-anchor="middle" fill="currentColor">1 1 → 1</text>
+
+        <rect x="475" y="68" width="100" height="116" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1"></rect>
+        <text x="525" y="89" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">OR</text>
+        <line x1="475" y1="98" x2="575" y2="98" stroke="currentColor" stroke-width="1" opacity=".35"></line>
+        <text x="525" y="116" font-size="11.5" text-anchor="middle" fill="currentColor">0 0 → 0</text>
+        <text x="525" y="134" font-size="11.5" text-anchor="middle" fill="currentColor">0 1 → 1</text>
+        <text x="525" y="152" font-size="11.5" text-anchor="middle" fill="currentColor">1 0 → 1</text>
+        <text x="525" y="170" font-size="11.5" text-anchor="middle" fill="currentColor">1 1 → 1</text>
+
+        <rect x="585" y="68" width="100" height="116" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1"></rect>
+        <text x="635" y="89" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">XOR</text>
+        <line x1="585" y1="98" x2="685" y2="98" stroke="currentColor" stroke-width="1" opacity=".35"></line>
+        <text x="635" y="116" font-size="11.5" text-anchor="middle" fill="currentColor">0 0 → 0</text>
+        <text x="635" y="134" font-size="11.5" text-anchor="middle" fill="currentColor">0 1 → 1</text>
+        <text x="635" y="152" font-size="11.5" text-anchor="middle" fill="currentColor">1 0 → 1</text>
+        <text x="635" y="170" font-size="11.5" text-anchor="middle" fill="currentColor">1 1 → 0</text>
+
+        <text x="365" y="208" font-size="11.5" fill="currentColor" opacity=".75">回路そのものは同じ。違うのは表に書かれた答えだけ。</text>
+        <text x="365" y="228" font-size="11.5" fill="currentColor" opacity=".75">6入力なら行数が 64 になるだけで、理屈は変わらない。</text>
+
+        <line x1="30" y1="252" x2="690" y2="252" stroke="currentColor" stroke-width="1" opacity=".25"></line>
+        <text x="30" y="276" font-size="12.5" fill="currentColor">
+          この LUT が 53,200 個、フリップフロップ（1ビットの記憶素子）が 106,400 個。これがファブリックの素材。
+        </text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>LUT は「書き換えられる早見表」で、表の中身しだいで何の論理回路にもなる。</b>
+      入力 6 ビットに対する答えを 64 個ぶん持っていて、その 64 ビットを書き換えるだけで AND にも XOR にも加算器にもなる。
+      <b>ビットストリームとは、全 LUT の表の中身と全配線の指定を焼いたファイル</b>のこと。
+      これを読み込ませた瞬間に、空っぽだったファブリックが目的の回路になる。
+    </figcaption>
+  </figure>
+
+  <p>
+    実例として、昨日作った回路が実際にどれだけ使ったかを載せます。
+  </p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>資源</th><th class="num">使用</th><th class="num">全体</th><th class="num">割合</th><th>役割</th></tr></thead>
+      <tbody>
+        <tr><td>LUT</td><td class="num">4,360</td><td class="num">53,200</td><td class="num">8.2%</td><td>制御・判定・アドレス計算など何でも</td></tr>
+        <tr><td>フリップフロップ</td><td class="num">6,199</td><td class="num">106,400</td><td class="num">5.8%</td><td>値を1クロック覚える</td></tr>
+        <tr><td>Block RAM</td><td class="num">11.5</td><td class="num">140</td><td class="num">8.2%</td><td>まとまったデータの一時置き場</td></tr>
+        <tr class="hi"><td><strong>DSP</strong></td><td class="num"><strong>0</strong></td><td class="num">220</td><td class="num">0.0%</td><td><strong>掛け算専用。今回は計算をしていないので未使用</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    DSP がちょうど 0 なのが分かりやすいと思います。あの回路はデータを運ぶだけで計算をしないので、
+    掛け算器を1個も使っていません。<strong>LUT は何でも屋、DSP は掛け算専門</strong>、という分業になっています。
+  </p>
+  <p>
+    掛け算は LUT でも作れますが、まともな幅の掛け算器を LUT で組むと数百個を食って遅くなります。
+    だから最初から焼き込んである専用回路が用意されている、というわけです。
+    このチップの DSP は <strong>25ビット × 18ビットの符号付き掛け算器</strong>に 48 ビットの累算器が付いたもので、
+    INT8 を扱うにはかなり大きすぎます。
+  </p>
+
+  <div class="note">
+    <span class="lbl">三値化すると DSP は要らなくなる</span>
+    <p>
+      重みが +1 / 0 / −1 の三値になると、掛け算は<strong>「足す・何もしない・引く」の3択</strong>に変わります。
+      これは掛け算ではないので DSP ではなく <strong>LUT で作ります。</strong>
+      つまり三値の道に進むと、効いてくる予算は DSP の 220 個ではなく <strong>LUT の 53,200 個</strong>のほうです。
+      ざっと見積もって必要なのは 1,000〜1,500 個程度なので、<strong>LUT も余ります。</strong>
+      結局、足りないのは帯域だけ、という結論は変わりません。
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">図3 — なぜ「帯域」が壁になるのか</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 330" role="img" aria-label="重みの流れ図。DDRにある1億3500万個の重みが、細いパイプを通って演算器に流れる。パイプの太さが毎秒0.77ギガバイトで、それに対して掛け算器220個のうち実際に使えるのは4個分しかない。">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="var(--hot)"></polygon>
+          </marker>
+        </defs>
+
+        <!-- DDR -->
+        <rect x="30" y="96" width="150" height="108" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="105" y="132" font-size="13" font-weight="600" text-anchor="middle" fill="currentColor">DDR</text>
+        <text x="105" y="156" font-size="12" text-anchor="middle" fill="currentColor" opacity=".8">重み 1億3500万個</text>
+        <text x="105" y="178" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".6">1トークンごとに全部読む</text>
+
+        <!-- pipe -->
+        <rect x="180" y="132" width="250" height="36" fill="var(--hot-wash)" stroke="var(--hot)" stroke-width="1.6"></rect>
+        <line x1="196" y1="150" x2="414" y2="150" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar2)"></line>
+        <text x="305" y="120" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">0.77 GB/s</text>
+        <text x="305" y="190" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".7">この太さが上限</text>
+
+        <!-- compute -->
+        <rect x="430" y="60" width="260" height="180" fill="var(--diag-fill)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="446" y="84" font-size="13" font-weight="600" fill="currentColor">PL の掛け算器（DSP）220個</text>
+
+        <!-- DSP grid: 11 x 5 = 55 squares representing 220 (each = 4) -->
+        <g>
+          <rect x="446" y="98" width="14" height="14" fill="var(--hot)" stroke="none"></rect>
+          <rect x="466" y="98" width="14" height="14" fill="var(--hot)" stroke="none"></rect>
+          <rect x="486" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="506" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="526" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="546" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="566" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="586" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="606" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="626" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="646" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+        </g>
+        <g opacity=".55">
+          <rect x="446" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="466" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="486" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="506" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="526" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="546" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="566" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="586" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="606" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="626" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="646" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="446" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="466" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="486" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="506" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="526" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="546" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="566" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="586" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="606" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="626" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="646" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="446" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="466" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="486" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="506" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="526" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="546" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="566" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="586" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="606" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="626" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="646" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="446" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="466" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="486" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="506" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="526" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="546" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="566" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="586" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="606" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="626" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="646" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+        </g>
+        <text x="446" y="216" font-size="12" fill="var(--hot)" font-weight="600">■ = 実際に働けるぶん（約8個）</text>
+        <text x="446" y="234" font-size="11.5" fill="currentColor" opacity=".65">残り 212 個は待っているだけ</text>
+
+        <text x="360" y="288" font-size="12.5" text-anchor="middle" fill="currentColor">
+          INT8 なら、重み 1 バイトにつき掛け算は 1 回きり
+        </text>
+        <text x="360" y="310" font-size="12.5" text-anchor="middle" fill="currentColor" opacity=".75">
+          → 掛け算器を増やしても、パイプが細ければ何も速くならない
+        </text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>推論の速度を決めているのは、演算器の数ではなくメモリからの読み出し速度。</b>
+      1トークン作るのに全部の重みを1回ずつ読む必要があり、INT8 では読んだ 1 バイトに対して掛け算は 1 回しか発生しない。
+      つまり<b>「1秒間に何バイト読めるか」がそのまま「1秒間に何回計算できるか」の上限</b>になる。
+      220 個の DSP のうち、この帯域で養えるのは約 8 個分しかない。
+      <b>（2026-09-08 追記: 帯域が 1.97 GB/s と確定したので、この数は約 14 個に更新された。
+      全体の 6%。「演算器は桁で余る」という話の向きは変わらない。）</b>
+    </figcaption>
+  </figure>
+
+  <p>
+    これが、この計画で最初にひっくり返った見立てです。
+    当初は「DSP が何百個も空いているから速くなるはず」と考えていました。実際には
+    <strong>DSP はまったく足りていて、足りないのはメモリからの道幅のほう</strong>でした。
+  </p>
+
+  <div class="note">
+    <span class="lbl">ここから出てくる結論</span>
+    <p>
+      速くしたければ、<strong>重み1個あたりのバイト数を減らす</strong>のが一番効きます。
+      INT8（1バイト/重み）を<strong>三値化</strong>（約0.2バイト/重み）にすれば、同じ道幅で 5 倍の重みを流せます。
+      しかも三値なら掛け算が足し算・引き算で済むので、DSP すら要らなくなります。
+      <strong>BitNet b1.58 のようなモデルがこのボードに向いている理由がここにあります。</strong>
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">図4 — 昨日測ったのは「道をどれだけ使えるか」</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 300" role="img" aria-label="同じDDRメモリの道幅2.1GB/sに対して、CPU2コアは0.70GB/sで33パーセント、PLは1.54GB/sで74パーセントを使えている、という比較の図。">
+        <!-- frame label -->
+        <text x="30" y="34" font-size="12.5" fill="currentColor" opacity=".75">DDR の道幅（理論上の上限）＝ 2.1 GB/s</text>
+
+        <!-- ruler -->
+        <rect x="200" y="46" width="480" height="16" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1"></rect>
+        <text x="686" y="59" font-size="11" fill="currentColor" opacity=".6">2.1</text>
+
+        <!-- CPU bar -->
+        <text x="188" y="112" font-size="13" text-anchor="end" fill="currentColor">CPU 2コア</text>
+        <text x="188" y="130" font-size="11" text-anchor="end" fill="currentColor" opacity=".6">読み出しの実測</text>
+        <rect x="200" y="94" width="480" height="40" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"></rect>
+        <rect x="200" y="94" width="160" height="40" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.2"></rect>
+        <text x="372" y="119" font-size="13" fill="currentColor">0.70 GB/s　＝ 33%</text>
+
+        <!-- PL bar -->
+        <text x="188" y="192" font-size="13" text-anchor="end" fill="var(--hot)" font-weight="600">PL（昨日）</text>
+        <text x="188" y="210" font-size="11" text-anchor="end" fill="currentColor" opacity=".6">DMA の実測</text>
+        <rect x="200" y="174" width="480" height="40" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"></rect>
+        <rect x="200" y="174" width="352" height="40" fill="var(--hot-wash)" stroke="var(--hot)" stroke-width="1.8"></rect>
+        <text x="376" y="200" font-size="13" text-anchor="middle" fill="var(--hot)" font-weight="600">1.54 GB/s　＝ 74%</text>
+
+        <!-- ADRFT1 reference -->
+        <line x1="200" y1="244" x2="680" y2="244" stroke="currentColor" stroke-width="1" opacity=".2"></line>
+        <text x="188" y="270" font-size="12" text-anchor="end" fill="currentColor" opacity=".65">参考: ADRFT1</text>
+        <text x="200" y="270" font-size="12" fill="currentColor" opacity=".65">CPU 4コアで 6.4 GB/s の道の 13% しか使えていなかった</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>同じボード、同じ DDR に対して、CPU と PL がそれぞれどれだけ引き出せたか。</b>
+      CPU は 2 コア総出で 33%。PL は 1 本の DMA だけで 74%。
+      74% という数字は、リフレッシュやバンク切り替えの損失を考えると<b>ほぼ実用上の上限</b>で、
+      PL 側は DDR を使い切れているといえる。
+    </figcaption>
+  </figure>
+
+  <p>
+    「PL は同じことを 74% でやります」というのは、こういう意味でした。
+    <strong>同じメモリに対して、CPU は3割しか引き出せないが、PL は7割強を引き出せる。</strong>
+    ハードウェアで直接メモリを叩く回路のほうが、汎用 CPU よりずっと効率よくメモリを使えるということです。
+  </p>
+  <div class="note later">
+    <span class="lbl">2026-09-08 追記 — この節の 74% は誤りでした</span>
+    <p>
+      <strong>1.54 GB/s という測定値そのものは正しい</strong>のですが、その解釈が違いました。
+      これは DDR の 2.1 GB/s に対する 74% ではなく、<strong>PL 側の「道幅」0.80 GB/s に対する 96%</strong>です。
+      AXI の経路は 64 ビット幅＝1クロックあたり 8 バイトしか運べないので、
+      100 MHz では <span class="mono">8 × 100,000,000 = 0.80 GB/s</span> が上限になります。
+      読みの 0.77 も書きの 0.77 も、DDR ではなくこちらの天井に当たっていました。
+    </p>
+    <p>
+      読み専用の回路に作り替えて測り直した結果、PL が DDR から読み出せる本当の上限は
+      <strong>1.97 GB/s（DDR の 93.6%）</strong>でした。CPU の 33% に対して <strong>2.8 倍</strong>で、
+      「PL のほうが DDR を引き出せる」という結論はむしろ強まっています。
+      ただし <strong>HP ポートを2本使うことが条件</strong>で、1本では 53.7% までしか届きません。
+      詳細は <a href="02-two-ceilings.html">「二つの天井」</a>へ。
+    </p>
+  </div>
+
+  <p>
+    そして ADRFT1 では、CPU が 13% しか引き出せていませんでした。
+    あのボードで「遅い」と感じていたものの正体は、DDR の性能ではなく
+    <strong>CPU がその性能を引き出せていなかったこと</strong>だったわけです。
+    <em>「ファブリックに移す価値がある」という仮説が実測で裏付けられた</em>というのは、この差を指しています。
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">図5 — 昨日作った回路は「何もしない回路」</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 320" role="img" aria-label="作成した回路のブロック図。PSがGP0経由でAXI DMAを制御し、DMAはDDRからデータを読んでFIFOを一周させてDDRに書き戻す。読みと書きがそれぞれ0.77GB/sで、DDRから見た合計は1.54GB/s。">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="currentColor"></polygon>
+          </marker>
+          <marker id="ar3h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="var(--hot)"></polygon>
+          </marker>
+        </defs>
+
+        <!-- PS -->
+        <rect x="30" y="40" width="130" height="54" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.3"></rect>
+        <text x="95" y="72" font-size="12.5" text-anchor="middle" fill="currentColor">PS（CPU）</text>
+
+        <!-- DMA -->
+        <rect x="250" y="34" width="160" height="66" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.8"></rect>
+        <text x="330" y="60" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">AXI DMA</text>
+        <text x="330" y="82" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">データを運ぶ係</text>
+
+        <!-- FIFO -->
+        <rect x="520" y="34" width="160" height="66" fill="var(--diag-fill)" stroke="currentColor" stroke-width="1.3"></rect>
+        <text x="600" y="60" font-size="12.5" text-anchor="middle" fill="currentColor">FIFO</text>
+        <text x="600" y="82" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">ただの通り道</text>
+
+        <!-- control -->
+        <line x1="160" y1="67" x2="244" y2="67" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar3)"></line>
+        <text x="202" y="58" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".7">GP0</text>
+
+        <!-- DMA -> FIFO -->
+        <line x1="410" y1="55" x2="514" y2="55" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar3)"></line>
+        <line x1="514" y1="82" x2="410" y2="82" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar3)"></line>
+        <text x="462" y="46" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".7">出て</text>
+        <text x="462" y="99" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".7">戻る</text>
+
+        <!-- DDR -->
+        <rect x="250" y="228" width="230" height="56" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="365" y="253" font-size="13" font-weight="600" text-anchor="middle" fill="currentColor">DDR メモリ</text>
+        <text x="365" y="273" font-size="11" text-anchor="middle" fill="currentColor" opacity=".65">上限 2.1 GB/s</text>
+
+        <!-- HP0 zone -->
+        <rect x="230" y="140" width="270" height="42" fill="var(--hot-wash)" stroke="var(--hot)" stroke-width="1.4"></rect>
+        <text x="365" y="166" font-size="12" text-anchor="middle" fill="var(--hot)" font-weight="600">HP0（PLとDDRをつなぐ門）</text>
+
+        <!-- read arrow -->
+        <polyline points="300,228 300,182" fill="none" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar3h)"></polyline>
+        <polyline points="300,140 300,100" fill="none" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar3h)"></polyline>
+        <text x="196" y="212" font-size="11.5" fill="var(--hot)">読み 0.77 GB/s</text>
+
+        <!-- write arrow -->
+        <polyline points="430,100 430,140" fill="none" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar3h)"></polyline>
+        <polyline points="430,182 430,228" fill="none" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar3h)"></polyline>
+        <text x="452" y="212" font-size="11.5" fill="var(--hot)">書き 0.77 GB/s</text>
+
+        <text x="600" y="248" font-size="12.5" fill="currentColor" font-weight="600">合計 1.54 GB/s</text>
+        <text x="600" y="268" font-size="11" fill="currentColor" opacity=".65">＝ 上限の 74%</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>DDR から読んで、PL の中を一周させて、DDR に書き戻すだけの回路。</b>
+      計算は何もしていない。<b>目的は工場を建てることではなく、工場に材料を運ぶ道の太さを測ること</b>だった。
+      読みと書きが同じ門を通るので、DDR から見た仕事量は 0.77 の 2 倍で 1.54 GB/s になる。
+    </figcaption>
+  </figure>
+
+  <p>
+    「何もしない回路をわざわざ作った」のには理由があります。
+    演算器を先に作り込んでしまうと、遅かったときに<strong>「回路が下手なのか、道が細いのか」が切り分けられません。</strong>
+    先に道の太さだけを確定させておけば、次に作る演算回路は「その道を食い切れるだけの規模」に設計すればよく、
+    過剰にも過少にもなりません。
+  </p>
+  <p>
+    転送後に元データと結果を1バイトずつ照合して<strong>完全一致</strong>を確認しています。
+    速いが壊れている、では意味がないので。
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">図6 — Mac 1台で回るようになった</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 210" role="img" aria-label="作業の流れ図。Mac上のDockerとRosettaでx86のLinuxを動かし、その中のVivadoが設計図からビットストリームを生成し、ネットワーク経由でPYNQ-Z1に送ってPythonから読み込んで実測する、という一周のループ。">
+        <defs>
+          <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="currentColor"></polygon>
+          </marker>
+        </defs>
+
+        <rect x="20" y="52" width="150" height="76" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.3"></rect>
+        <text x="95" y="80" font-size="12.5" text-anchor="middle" font-weight="600" fill="currentColor">Mac (M4)</text>
+        <text x="95" y="100" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">Docker + Rosetta 2</text>
+        <text x="95" y="117" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">＝ x86 の Linux</text>
+
+        <line x1="170" y1="90" x2="214" y2="90" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar4)"></line>
+
+        <rect x="220" y="52" width="150" height="76" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.6"></rect>
+        <text x="295" y="80" font-size="12.5" text-anchor="middle" font-weight="600" fill="var(--hot)">Vivado 2024.1</text>
+        <text x="295" y="100" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">設計図 → 回路に変換</text>
+        <text x="295" y="117" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">7分半</text>
+
+        <line x1="370" y1="90" x2="414" y2="90" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar4)"></line>
+        <text x="392" y="80" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".65">.bit</text>
+
+        <rect x="420" y="52" width="130" height="76" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.3"></rect>
+        <text x="485" y="86" font-size="12.5" text-anchor="middle" fill="currentColor">scp で転送</text>
+        <text x="485" y="106" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">LAN 経由</text>
+
+        <line x1="550" y1="90" x2="594" y2="90" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar4)"></line>
+
+        <rect x="600" y="52" width="100" height="76" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.6"></rect>
+        <text x="650" y="80" font-size="12.5" text-anchor="middle" font-weight="600" fill="var(--hot)">PYNQ-Z1</text>
+        <text x="650" y="100" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">Python で</text>
+        <text x="650" y="117" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">読み込んで実測</text>
+
+        <!-- feedback loop -->
+        <polyline points="650,128 650,168 95,168 95,132" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#ar4)" opacity=".7"></polyline>
+        <text x="372" y="186" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".7">結果を見て設計を直す　― 一周およそ 15 分</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>Apple Silicon の Mac だけで、FPGA の設計から実測までが一周する。</b>
+      Vivado は x86 の Linux でしか動かないが、Docker と Rosetta 2 で動かせた。
+      JTAG のような書き込み器材は不要で、生成したファイルをネットワークで送って Python から読み込むだけ。
+    </figcaption>
+  </figure>
+
+  <p>
+    これは地味に見えて、この計画で一番大きな成果かもしれません。
+    <strong>ADRFT1 では最後までこの一周が作れませんでした。</strong>
+    FPGA を書き換えるのに専用の器材（3万円以上）が必要で、しかも失敗すると復旧できない、という状態だったからです。
+    引き出しから出てきた PYNQ-Z1 では、初日にこれが回りました。
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">ここまでの経緯</h2>
+
+  <div class="timeline">
+    <div class="tl">
+      <div class="tl-d">8/29–30</div>
+      <div class="tl-b">
+        <b>ADRFT1 が不安定な原因を特定</b>
+        <span>デバイスツリーの記述ミスで、CPU が使えないメモリ領域を普通の RAM として掴んでいた。
+        起動スクリプトに2行足す回避策で完全に解消。2台とも適用済みで、今も安定して動いている。</span>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="tl-d">9/3</div>
+      <div class="tl-b">
+        <b>メーカーは対応しないと回答</b>
+        <span>不具合は認識しているが直す予定はない、との返信。回避策は暫定ではなく恒久的な構成になった。</span>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="tl-d">9/4</div>
+      <div class="tl-b">
+        <b>帯域を実測して、見立てが変わった</b>
+        <span>ADRFT1 の CPU は DDR の 13% しか引き出せていなかった。「DSP が余っている」ではなく
+        「メモリの道が使えていない」が問題だと判明。あわせて FPGA の書き換え手段が塞がっていることも確定し、
+        <b>ADRFT1 での FPGA 計画は中止</b>を決めた。</span>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="tl-d">9/5</div>
+      <div class="tl-b">
+        <b>PYNQ-Z1 で一周させた</b>
+        <span>引き出しから出てきた 2017 年のボードをセットアップ。Mac 上に Vivado 環境を構築し、
+        自作のビットストリームを生成してボードに流し込み、<b>PL→DDR の帯域 1.54 GB/s（上限の 74%）を実測</b>。</span>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="tl-d">9/8</div>
+      <div class="tl-b">
+        <b>その 74% が DDR の話ではなかったと判明</b>
+        <span>書き戻しをやめた「読み専用」の回路を作り、クロックを変えて測り直したところ、
+        実測は毎回<b>「道幅」の 99%</b> に張り付いた。犯人は DDR ではなく AXI の経路幅のほうだった。
+        HP ポートを2本に増やして初めて DDR 側が飽和し、<b>本当の上限 1.97 GB/s（DDR の 93.6%）を確定</b>。
+        → <a href="02-two-ceilings.html">「二つの天井」</a></span>
+      </div>
+    </div>
+  </div>
+
+  <p>
+    ちなみに、KV260（$199、性能は PYNQ-Z1 のおよそ 10 倍）への移行を検討していましたが、
+    <strong>PYNQ-Z1 が思ったより使えることが分かったので、判断は保留でよさそうです。</strong>
+    三値化した 135M クラスのモデルなら 512MB のメモリに収まるので、このボードで一度最後まで通せる可能性があります。
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">次にやること</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>段階</th><th>やること</th><th>何が分かるか</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="num">済</td>
+          <td>読み専用の帯域を測る</td>
+          <td><b>2026-09-08 に実施。1.97 GB/s（DDR の 93.6%）</b>。
+              予想どおり読み専用のほうが出たが、理由は想定と違った——
+              伸びしろは書き戻しの分ではなく<b>道幅</b>にあった。
+              → <a href="02-two-ceilings.html">「二つの天井」</a></td>
+        </tr>
+        <tr class="hi">
+          <td class="num">次</td>
+          <td>INT8 の掛け算器を並べる</td>
+          <td>道の太さに合わせた規模で作る。220個は要らない。
+              <b>確定した設計値は 142.86 MHz で 14 個</b>（全体の 6%）</td>
+        </tr>
+        <tr>
+          <td class="num">本命</td>
+          <td>三値（BitNet b1.58）化</td>
+          <td>重み1個あたり 1.0 → 0.2 バイト。同じ道で 5 倍流せる。
+              <b>1.97 GB/s なら毎秒 9.8 G 個の重み相当</b></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    見込みとしては、三値化まで進めば <strong>135M クラスで CPU の 10〜20 倍</strong>、
+    毎秒 30 トークン前後は狙えるはずです。ただしこれは今回測った帯域からの試算で、
+    実際に動かしてみるまでは分かりません。
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">用語</h2>
+  <dl class="gloss">
+    <dt>PS</dt><dd>Processing System。チップに載っている完成品の CPU 側。Linux が動いている。</dd>
+    <dt>PL</dt><dd>Programmable Logic。空っぽの回路の土地。ここに自分の回路を建てる。「ファブリック」とほぼ同義。</dd>
+    <dt>ファブリック</dt><dd>PL の中身、書き換え可能な回路の海。布地（fabric）に喩えた呼び方。</dd>
+    <dt>ビットストリーム</dt><dd>回路の設計図をチップに流し込める形式にしたファイル（<span class="mono">.bit</span>）。これを読み込ませると PL がその回路になる。</dd>
+    <dt>DSP</dt><dd>ファブリックに埋め込まれている掛け算専用の小さな回路。このチップには 220 個ある。</dd>
+    <dt>HP ポート</dt><dd>High Performance port。PL から DDR メモリへ行くための門。これを通る回路を作らないと PL はメモリに触れない。</dd>
+    <dt>AXI</dt><dd>チップ内部の部品どうしをつなぐ規格。道路の規格のようなもの。</dd>
+    <dt>DMA</dt><dd>Direct Memory Access。CPU を介さずにメモリとデータをやりとりする運搬係の回路。</dd>
+    <dt>帯域</dt><dd>1秒間に運べるバイト数。この計画では一貫してこれが速度を決めている。</dd>
+    <dt>量子化</dt><dd>モデルの重みを粗い数値で表して小さくすること。INT8 は1バイト、三値は約0.2バイト。</dd>
+  </dl>
+</section>
+
+</div>
+<!-- nav -->
+<nav class="jnav foot" aria-label="開発記録のナビゲーション">
+  <a href="../index.html">開発記録の目次</a>
+  <a href="02-two-ceilings.html" rel="next">次: 二つの天井 →</a>
+  <a class="lang" href="../en/01-cpu-to-fabric.html" hreflang="en" lang="en">English</a>
+</nav>
+<!-- /nav -->
+</body>
+</html>

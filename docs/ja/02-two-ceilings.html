@@ -1,0 +1,692 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>二つの天井</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=M+PLUS+1+Code:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --paper:#F4F6F7;
+    --card:#FFFFFF;
+    --ink:#1A2027;
+    --ink-2:#5C666F;
+    --ink-3:#8B959D;
+    --rule:#D9DFE3;
+    --rule-2:#EAEEF0;
+    --path:#1F5FA9;      /* 道幅（PL 側の天井） */
+    --path-soft:#E4EDF7;
+    --ddr:#C0701A;       /* DDR（メモリ側の天井） */
+    --ddr-soft:#F9EEE1;
+    --wrong:#A33A3A;
+    --wrong-soft:#F7E9E9;
+    --serif:"Shippori Mincho B1",'Hiragino Mincho ProN',"Yu Mincho",serif;
+    --sans:"Zen Kaku Gothic New",'Hiragino Sans',"Yu Gothic",system-ui,sans-serif;
+    --mono:"M PLUS 1 Code",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#14181C;
+      --card:#1B2126;
+      --ink:#E6EAED;
+      --ink-2:#A3ADB5;
+      --ink-3:#727C84;
+      --rule:#2E363D;
+      --rule-2:#232A30;
+      --path:#6FA8E8;
+      --path-soft:#1C2A3A;
+      --ddr:#E0A05B;
+      --ddr-soft:#332617;
+      --wrong:#DF8C8C;
+      --wrong-soft:#33201F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14181C;
+    --card:#1B2126;
+    --ink:#E6EAED;
+    --ink-2:#A3ADB5;
+    --ink-3:#727C84;
+    --rule:#2E363D;
+    --rule-2:#232A30;
+    --path:#6FA8E8;
+    --path-soft:#1C2A3A;
+    --ddr:#E0A05B;
+    --ddr-soft:#332617;
+    --wrong:#DF8C8C;
+    --wrong-soft:#33201F;
+  }
+
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:16px;
+    line-height:1.9;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px 96px;}
+
+  /* ---------- 冒頭 ---------- */
+  header{padding:72px 0 40px;border-bottom:1px solid var(--rule);}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+    color:var(--ink-3);text-transform:uppercase;margin-bottom:20px;
+  }
+  h1{
+    font-family:var(--serif);font-weight:700;
+    font-size:clamp(38px,7vw,58px);line-height:1.25;
+    margin:0 0 20px;text-wrap:balance;letter-spacing:.01em;
+  }
+  .standfirst{font-size:17px;color:var(--ink-2);margin:0;max-width:60ch;}
+
+  /* ---------- 見出し ---------- */
+  section{margin-top:60px;}
+  h2{
+    font-family:var(--serif);font-weight:700;
+    font-size:26px;line-height:1.5;margin:0 0 8px;
+    display:flex;gap:16px;align-items:baseline;text-wrap:balance;
+  }
+  h2 .n{
+    font-family:var(--mono);font-size:13px;font-weight:700;
+    color:var(--path);flex:none;padding-top:2px;
+  }
+  h2 + .sub{
+    font-family:var(--mono);font-size:12px;color:var(--ink-3);
+    margin:0 0 24px 39px;letter-spacing:.04em;
+  }
+  h3{
+    font-family:var(--sans);font-weight:700;font-size:16px;
+    margin:34px 0 10px;
+  }
+  p{margin:0 0 18px;}
+
+  /* ---------- 図 ---------- */
+  figure{
+    margin:34px 0;background:var(--card);
+    border:1px solid var(--rule);border-radius:3px;
+    padding:26px 22px 18px;
+  }
+  figure svg{display:block;width:100%;max-width:100%;height:auto;}
+  figcaption{
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--rule-2);
+    font-size:13px;line-height:1.75;color:var(--ink-2);
+  }
+  figcaption b{color:var(--ink);font-weight:700;}
+
+  /* ---------- 数値まわり ---------- */
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .tbl-scroll{overflow-x:auto;margin:26px 0;}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px;}
+  th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--rule-2);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule);
+  }
+  tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  tbody td:first-child{font-family:var(--sans);}
+  tr.hit td{background:var(--ddr-soft);}
+  tr.hit td strong{color:var(--ddr);}
+
+  /* ---------- 囲み ---------- */
+  .callout{
+    border-left:3px solid var(--path);background:var(--path-soft);
+    padding:18px 20px;margin:28px 0;border-radius:0 3px 3px 0;
+  }
+  .callout p:last-child{margin-bottom:0;}
+  .callout .label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:var(--path);display:block;margin-bottom:8px;
+  }
+  .callout.fix{border-left-color:var(--wrong);background:var(--wrong-soft);}
+  .callout.fix .label{color:var(--wrong);}
+  .callout.win{border-left-color:var(--ddr);background:var(--ddr-soft);}
+  .callout.win .label{color:var(--ddr);}
+
+  .keyline{
+    font-family:var(--serif);font-size:22px;line-height:1.7;
+    margin:34px 0;padding:22px 0;
+    border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);
+    text-wrap:balance;
+  }
+  .keyline .num{font-size:26px;}
+
+  .legend{display:flex;flex-wrap:wrap;gap:20px;margin:0 0 22px;font-size:13px;}
+  .legend span{display:flex;align-items:center;gap:8px;color:var(--ink-2);}
+  .legend i{display:block;width:22px;height:3px;border-radius:2px;flex:none;}
+
+  ul{margin:0 0 18px;padding-left:1.3em;}
+  li{margin-bottom:8px;}
+  code{font-family:var(--mono);font-size:.9em;background:var(--rule-2);padding:1px 5px;border-radius:3px;}
+
+  footer{
+    margin-top:72px;padding-top:26px;border-top:1px solid var(--rule);
+    font-size:13px;color:var(--ink-3);
+  }
+</style>
+<!-- nav -->
+<style>
+  body{margin:0}
+  img{max-width:100%}
+  .jnav{max-width:760px;margin:0 auto;padding:14px 16px 0;display:flex;flex-wrap:wrap;
+        gap:4px 18px;font-size:12.5px;line-height:1.7;opacity:.8}
+  .jnav.foot{padding:0 16px 40px}
+  .jnav a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
+  .jnav a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  .jnav .lang{margin-left:auto}
+  @media (min-width:600px){ .jnav{padding:14px 24px 0} .jnav.foot{padding:0 24px 40px} }
+</style>
+<!-- /nav -->
+</head>
+<body>
+<!-- nav -->
+<nav class="jnav" aria-label="開発記録のナビゲーション">
+  <a href="../index.html">開発記録の目次</a>
+  <a href="01-cpu-to-fabric.html" rel="prev">← 前: CPU からファブリックへ</a>
+  <a href="03-the-wall-does-not-move.html" rel="next">次: 壁は動かない →</a>
+  <a class="lang" href="../en/02-two-ceilings.html" hreflang="en" lang="en">English</a>
+</nav>
+<!-- /nav -->
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">PYNQ-Z1 · 段階2 · 2026-09-08</div>
+  <h1>二つの天井</h1>
+  <p class="standfirst">
+    「PL は DDR の 74% を引き出せた」——前回そう書きました。あれは間違いでした。
+    測っていたのは DDR ではなく、その手前にあるもっと低い天井です。
+    今日はその二つを分けて測り、本当の上限 <span class="num">1.97 GB/s</span> を見つけました。
+    これが自作アクセラレータの設計値になります。
+  </p>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">01</span><span>そもそも何を測っているのか</span></h2>
+  <p class="sub">why bandwidth is the number that matters</p>
+
+  <p>
+    小さな言語モデルが1文字（1トークン）を出すとき、CPU や FPGA は
+    <b>モデルの重みを全部いちど読み直します</b>。135M パラメータを INT8 で持てば 135 MB。
+    これを毎回読む。だから「1秒に何文字出せるか」は、ほぼそのまま
+    <b>「1秒に何バイト読めるか」</b>で決まります。
+  </p>
+  <p>
+    しかも INT8 では、<b>重み1バイトを読むごとに掛け算が1回</b>しか発生しません。
+    読む速度と計算する速度が 1 対 1 で紐づいている。
+    つまり演算器をいくら増やしても、読めなければ意味がない。
+    <b>測るべき数字は帯域ただ一つ</b>です。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">02</span><span>天井は一つではなかった</span></h2>
+  <p class="sub">the DDR wall and the datapath wall</p>
+
+  <p>
+    DDR から FPGA のファブリックまで、データは2つの狭いところを通ります。
+    この二つは<b>まったく別の理由で決まる、別の天井</b>です。
+    前回の私は、片方だけを測って、もう片方の話だと思い込んでいました。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 300" role="img" aria-label="DDRからファブリックまでの経路にある二つの天井。DDR自体は毎秒2.1ギガバイト供給できるが、その先のAXI経路は64ビット幅でクロックあたり8バイトしか運べず、100MHzでは毎秒0.8ギガバイトに制限される。">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- DDR -->
+      <rect x="16" y="86" width="128" height="120" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <text x="80" y="132" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">DDR3</text>
+      <text x="80" y="152" text-anchor="middle" font-size="11" fill="currentColor" opacity=".65">512 MB</text>
+      <text x="80" y="172" text-anchor="middle" font-size="11" fill="currentColor" opacity=".65">16 bit 幅</text>
+
+      <!-- 太い管：DDRの供給能力 -->
+      <path d="M144,104 L300,104 L300,188 L144,188 Z" fill="var(--ddr)" opacity=".16"/>
+      <line x1="144" y1="104" x2="300" y2="104" stroke="var(--ddr)" stroke-width="1.6"/>
+      <line x1="144" y1="188" x2="300" y2="188" stroke="var(--ddr)" stroke-width="1.6"/>
+      <text x="222" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ddr)">天井 A ・ DDR</text>
+      <text x="222" y="212" text-anchor="middle" font-size="13" font-family="var(--mono)" font-weight="700" fill="var(--ddr)">2.1 GB/s</text>
+      <text x="222" y="230" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">メモリの物理的な速さ</text>
+
+      <!-- 絞り -->
+      <path d="M300,104 L360,128 L360,164 L300,188 Z" fill="var(--path)" opacity=".14"/>
+      <line x1="300" y1="104" x2="360" y2="128" stroke="var(--path)" stroke-width="1.6"/>
+      <line x1="300" y1="188" x2="360" y2="164" stroke="var(--path)" stroke-width="1.6"/>
+
+      <!-- 細い管：AXI経路 -->
+      <path d="M360,128 L560,128 L560,164 L360,164 Z" fill="var(--path)" opacity=".14"/>
+      <line x1="360" y1="128" x2="560" y2="128" stroke="var(--path)" stroke-width="1.6"/>
+      <line x1="360" y1="164" x2="560" y2="164" stroke="var(--path)" stroke-width="1.6"/>
+      <text x="460" y="80" text-anchor="middle" font-size="12" font-weight="700" fill="var(--path)">天井 B ・ 道幅</text>
+      <text x="460" y="100" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">HP ポート ＋ AXI ストリーム</text>
+      <text x="460" y="212" text-anchor="middle" font-size="13" font-family="var(--mono)" font-weight="700" fill="var(--path)">0.80 GB/s</text>
+      <text x="460" y="230" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">8 バイト × 100 MHz</text>
+
+      <line x1="560" y1="146" x2="606" y2="146" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"/>
+
+      <!-- ファブリック -->
+      <rect x="616" y="106" width="128" height="80" rx="3" fill="none" stroke="currentColor" stroke-width="1.4"/>
+      <text x="680" y="140" text-anchor="middle" font-size="14" font-weight="700" fill="currentColor">ファブリック</text>
+      <text x="680" y="160" text-anchor="middle" font-size="11" fill="currentColor" opacity=".65">自作の演算回路</text>
+
+      <!-- 下の注記 -->
+      <line x1="16" y1="262" x2="744" y2="262" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="16" y="284" font-size="12" fill="currentColor" opacity=".75">
+        低いほうの天井が全体を決める。青が低いあいだ、琥珀は何 GB/s だろうと関係がない。
+      </text>
+    </svg>
+    <figcaption>
+      <b>図1 ／ 二つの天井。</b>
+      琥珀は DDR チップそのものの速さで、これは買った時点で決まっています。
+      青は <b>PL 側の道幅</b>で、AXI の経路が 64 ビット幅＝1クロックあたり 8 バイトしか運べないことから決まります。
+      100 MHz なら <span class="num">8 × 100,000,000 = 0.8 GB/s</span>。
+      <b>この青は設計で変えられます</b>——クロックを上げるか、道を増やすか。
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">03</span><span>前回の測り方が答えを隠していた</span></h2>
+  <p class="sub">the loopback hid the answer</p>
+
+  <p>
+    前回作った回路は<b>折り返し（ループバック）</b>でした。DDR から読んで、
+    PL を一周させて、そのまま DDR に書き戻す。
+    読みと書きが必ず同じ量になる形です。
+  </p>
+  <p>
+    そこで出た「読み 0.77 ＋ 書き 0.77 ＝ 合計 1.54 GB/s」を、私は
+    <b>「DDR の 2.1 に対して 74%」</b>と読みました。
+    けれど読みの 0.77 も書きの 0.77 も、<b>それぞれ自分の道幅 0.80 の 96%</b> です。
+    つまり張り付いていたのは青のほうで、琥珀にはまだ大量の余裕がありました。
+    <b>ループバックでは、二つの天井を切り分けられません。</b>
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 320" role="img" aria-label="前回のループバック回路と今回のヌルシンク回路の比較。前回はDMAが読んだデータをFIFOで折り返して同じDMAがDDRに書き戻すため読みと書きが必ず同量になる。今回は受け取って捨てるだけのシンクに置き換え、書き戻しの経路そのものを消した。">
+      <defs>
+        <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+        <marker id="ar2w" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--wrong)"/>
+        </marker>
+      </defs>
+
+      <!-- === 前回 === -->
+      <text x="16" y="26" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">BEFORE ／ 前回・折り返し</text>
+
+      <rect x="16" y="44" width="96" height="86" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="64" y="93" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">DDR</text>
+
+      <rect x="184" y="44" width="104" height="86" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="236" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">DMA</text>
+      <text x="236" y="102" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">運搬役</text>
+
+      <rect x="368" y="44" width="104" height="86" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="420" y="82" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">FIFO</text>
+      <text x="420" y="102" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">ただの筒</text>
+
+      <line x1="112" y1="70" x2="178" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+      <text x="145" y="60" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".75">読み</text>
+      <line x1="288" y1="70" x2="362" y2="70" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+
+      <line x1="362" y1="110" x2="292" y2="110" stroke="var(--wrong)" stroke-width="1.4" marker-end="url(#ar2w)"/>
+      <line x1="178" y1="110" x2="116" y2="110" stroke="var(--wrong)" stroke-width="1.4" marker-end="url(#ar2w)"/>
+      <text x="145" y="126" text-anchor="middle" font-size="10.5" fill="var(--wrong)">書き戻し</text>
+
+      <text x="500" y="76" font-size="11.5" fill="var(--wrong)">読み 0.77 ＋ 書き 0.77</text>
+      <text x="500" y="96" font-size="11.5" fill="var(--wrong)">＝ 合計 1.54 GB/s</text>
+      <text x="500" y="118" font-size="10.5" fill="currentColor" opacity=".6">どちらも道幅 0.80 の 96%</text>
+
+      <line x1="16" y1="160" x2="744" y2="160" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- === 今回 === -->
+      <text x="16" y="196" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">AFTER ／ 今回・ヌルシンク</text>
+
+      <rect x="16" y="214" width="96" height="86" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="64" y="263" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">DDR</text>
+
+      <rect x="184" y="214" width="104" height="86" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="236" y="252" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">DMA</text>
+      <text x="236" y="272" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">運搬役</text>
+
+      <rect x="368" y="214" width="104" height="86" rx="3" fill="var(--path)" fill-opacity=".12" stroke="var(--path)" stroke-width="1.6"/>
+      <text x="420" y="252" text-anchor="middle" font-size="13" font-weight="700" fill="var(--path)">シンク</text>
+      <text x="420" y="272" text-anchor="middle" font-size="10.5" fill="var(--path)" opacity=".85">捨てるだけ</text>
+
+      <line x1="112" y1="257" x2="178" y2="257" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+      <text x="145" y="247" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".75">読み</text>
+      <line x1="288" y1="257" x2="362" y2="257" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar2)"/>
+
+      <text x="500" y="246" font-size="11.5" fill="var(--path)">読みだけ。書き戻し無し</text>
+      <text x="500" y="268" font-size="10.5" fill="currentColor" opacity=".6">＝ 出た値がそのまま</text>
+      <text x="500" y="286" font-size="10.5" fill="currentColor" opacity=".6">　 DDR トラフィック</text>
+    </svg>
+    <figcaption>
+      <b>図2 ／ 消したのは矢印1本。</b>
+      赤い「書き戻し」の経路を丸ごと取り除き、受け取ったものを捨てるだけの回路に差し替えました。
+      Verilog で実質 <code>assign tready = 1'b1;</code> の一行です。
+      推論の本番も<b>重みを読むだけで書き戻さない</b>ので、こちらのほうが実物に近い形でもあります。
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">04</span><span>クロックを変えて、犯人を特定する</span></h2>
+  <p class="sub">if it tracks the clock, it is the datapath</p>
+
+  <p>
+    「青が犯人だ」と言うには証拠が要ります。使ったのは単純な手です——
+    <b>道幅だけを変えて、実測が付いてくるかを見る</b>。
+    道幅は <span class="num">8 バイト × クロック</span> なので、クロックを上げれば道幅だけが広がり、
+    DDR は何も変わりません。
+  </p>
+  <p>
+    100 MHz と 142.86 MHz の2種類を作って測りました。結果は判で押したようでした。
+  </p>
+
+  <div class="legend">
+    <span><i style="background:var(--ink)"></i>実測</span>
+    <span><i style="background:var(--path)"></i>天井 B ・ 道幅</span>
+    <span><i style="background:var(--ddr)"></i>天井 A ・ DDR 2.1 GB/s</span>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 780 300" role="img" aria-label="三つの構成の実測帯域の棒グラフ。HPポート1本100MHzでは0.79GB/sで道幅0.80の99パーセント。1本142.86MHzでは1.13で道幅1.14の99パーセント。2本142.86MHzでは1.97となり道幅2.29には届かずDDRの2.1に張り付いた。">
+      <!-- 目盛 -->
+      <g font-family="var(--mono)" font-size="10.5" fill="currentColor" opacity=".5">
+        <text x="170" y="272" text-anchor="middle">0</text>
+        <text x="290" y="272" text-anchor="middle">0.5</text>
+        <text x="410" y="272" text-anchor="middle">1.0</text>
+        <text x="530" y="272" text-anchor="middle">1.5</text>
+        <text x="650" y="272" text-anchor="middle">2.0</text>
+        <text x="744" y="272" text-anchor="middle">GB/s</text>
+      </g>
+      <g stroke="currentColor" stroke-width="1" opacity=".14">
+        <line x1="290" y1="40" x2="290" y2="252"/>
+        <line x1="410" y1="40" x2="410" y2="252"/>
+        <line x1="530" y1="40" x2="530" y2="252"/>
+        <line x1="650" y1="40" x2="650" y2="252"/>
+      </g>
+      <line x1="170" y1="40" x2="170" y2="252" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+
+      <!-- DDRの天井（全行共通） -->
+      <line x1="674" y1="36" x2="674" y2="252" stroke="var(--ddr)" stroke-width="2" stroke-dasharray="5 4"/>
+      <text x="674" y="28" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ddr)">DDR 2.1</text>
+
+      <!-- 行1 -->
+      <text x="158" y="70" text-anchor="end" font-size="12.5" fill="currentColor">1本 ・ 100 MHz</text>
+      <rect x="170" y="56" width="190" height="26" fill="currentColor" opacity=".85"/>
+      <line x1="362" y1="50" x2="362" y2="88" stroke="var(--path)" stroke-width="2.4"/>
+      <text x="374" y="74" font-size="11" font-family="var(--mono)" fill="var(--path)">道幅 0.80</text>
+      <text x="180" y="74" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--paper)">0.79</text>
+      <text x="158" y="88" text-anchor="end" font-size="10.5" font-family="var(--mono)" fill="var(--path)">99.1%</text>
+
+      <!-- 行2 -->
+      <text x="158" y="134" text-anchor="end" font-size="12.5" fill="currentColor">1本 ・ 142.86 MHz</text>
+      <rect x="170" y="120" width="271" height="26" fill="currentColor" opacity=".85"/>
+      <line x1="444" y1="114" x2="444" y2="152" stroke="var(--path)" stroke-width="2.4"/>
+      <text x="456" y="138" font-size="11" font-family="var(--mono)" fill="var(--path)">道幅 1.14</text>
+      <text x="180" y="138" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--paper)">1.13</text>
+      <text x="158" y="152" text-anchor="end" font-size="10.5" font-family="var(--mono)" fill="var(--path)">98.7%</text>
+
+      <!-- 行3 -->
+      <text x="158" y="198" text-anchor="end" font-size="12.5" fill="currentColor">2本 ・ 142.86 MHz</text>
+      <rect x="170" y="184" width="472" height="26" fill="var(--ddr)"/>
+      <line x1="719" y1="178" x2="719" y2="216" stroke="var(--path)" stroke-width="2.4"/>
+      <text x="719" y="232" text-anchor="middle" font-size="11" font-family="var(--mono)" fill="var(--path)">道幅 2.29</text>
+      <text x="180" y="202" font-size="12" font-family="var(--mono)" font-weight="700" fill="#241505">1.97</text>
+      <text x="158" y="216" text-anchor="end" font-size="10.5" font-family="var(--mono)" fill="var(--ddr)">DDR の 93.6%</text>
+
+      <line x1="170" y1="252" x2="744" y2="252" stroke="currentColor" stroke-width="1.4" opacity=".5"/>
+    </svg>
+    <figcaption>
+      <b>図3 ／ 上の2本は青に、いちばん下は琥珀に張り付いた。</b>
+      道幅を広げるたびに実測がぴったり付いてくる（99.1% → 98.7%）。
+      これで<b>犯人は道幅だと確定</b>します。ところが道を2本にした3行目だけ様子が違い、
+      <b>青の手前で止まって琥珀に触れました</b>。ここで初めて DDR が先に音を上げています。
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">05</span><span>道を2本にして、DDR の壁を叩く</span></h2>
+  <p class="sub">two HP ports, and the bottleneck moves</p>
+
+  <p>
+    Zynq には PL から DDR へ行く<b>「HP ポート」が4本</b>あります。
+    1本では 142.86 MHz でも DDR の半分（53.7%）しか使えませんでした。
+    そこで <b>DMA を2台立てて、HP0 と HP2 に振り分け</b>ました。
+    道幅は <span class="num">1.14 × 2 = 2.29 GB/s</span> ぶんになり、初めて DDR の 2.1 を上回ります。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 300" role="img" aria-label="HPポート1本と2本の比較。1本では実測1.13で道幅1.14をほぼ使い切り、DDRには余裕が残る。2本では道幅2.29に対し実測1.97にとどまり、道幅に14パーセントの余りが出てDDRの93.6パーセントに達した。倍にしたのに1.74倍にしかならなかったことがDDR側の飽和を示す。">
+      <defs>
+        <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- 左：1本 -->
+      <text x="20" y="26" font-size="12" font-family="var(--mono)" font-weight="700" fill="currentColor" opacity=".7">HP ポート 1 本</text>
+      <rect x="20" y="44" width="60" height="150" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="50" y="115" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">DDR</text>
+      <text x="50" y="133" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">2.1</text>
+
+      <path d="M80,104 L210,104 L210,134 L80,134 Z" fill="var(--path)" opacity=".16"/>
+      <rect x="80" y="104" width="128" height="30" fill="currentColor" opacity=".38"/>
+      <line x1="80" y1="104" x2="210" y2="104" stroke="var(--path)" stroke-width="1.6"/>
+      <line x1="80" y1="134" x2="210" y2="134" stroke="var(--path)" stroke-width="1.6"/>
+      <text x="145" y="96" text-anchor="middle" font-size="10.5" font-family="var(--mono)" fill="var(--path)">道幅 1.14</text>
+      <text x="145" y="152" text-anchor="middle" font-size="13" font-family="var(--mono)" font-weight="700" fill="currentColor">1.13</text>
+      <text x="145" y="170" text-anchor="middle" font-size="10" fill="var(--path)">道幅の 98.7%</text>
+      <text x="145" y="188" text-anchor="middle" font-size="10" fill="var(--ddr)">DDR の 53.7%</text>
+
+      <rect x="210" y="84" width="56" height="70" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="238" y="124" text-anchor="middle" font-size="10.5" fill="currentColor">PL</text>
+
+      <text x="145" y="228" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".75">詰まっているのは</text>
+      <text x="145" y="246" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--path)">道幅のほう</text>
+
+      <!-- 中央の区切り -->
+      <line x1="330" y1="20" x2="330" y2="280" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- 右：2本 -->
+      <text x="376" y="26" font-size="12" font-family="var(--mono)" font-weight="700" fill="currentColor" opacity=".7">HP ポート 2 本（HP0 + HP2）</text>
+      <rect x="376" y="44" width="60" height="150" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="406" y="115" text-anchor="middle" font-size="12" font-weight="700" fill="currentColor">DDR</text>
+      <text x="406" y="133" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">2.1</text>
+
+      <!-- 道幅2.29ぶん（上下2本） -->
+      <path d="M436,74 L586,74 L586,104 L436,104 Z" fill="var(--path)" opacity=".16"/>
+      <line x1="436" y1="74" x2="586" y2="74" stroke="var(--path)" stroke-width="1.6"/>
+      <line x1="436" y1="104" x2="586" y2="104" stroke="var(--path)" stroke-width="1.6"/>
+      <path d="M436,134 L586,134 L586,164 L436,164 Z" fill="var(--path)" opacity=".16"/>
+      <line x1="436" y1="134" x2="586" y2="134" stroke="var(--path)" stroke-width="1.6"/>
+      <line x1="436" y1="164" x2="586" y2="164" stroke="var(--path)" stroke-width="1.6"/>
+      <text x="511" y="66" text-anchor="middle" font-size="10.5" font-family="var(--mono)" fill="var(--path)">道幅 2.29（＝1.14 × 2）</text>
+
+      <!-- 実際に流れた量（道幅の86%）。残りは埋まらない -->
+      <rect x="436" y="74" width="129" height="30" fill="currentColor" opacity=".38"/>
+      <rect x="436" y="134" width="129" height="30" fill="currentColor" opacity=".38"/>
+      <line x1="565" y1="70" x2="565" y2="168" stroke="var(--ddr)" stroke-width="2" stroke-dasharray="4 3"/>
+      <path d="M567,119 L584,119" stroke="var(--ddr)" stroke-width="1.2"/>
+      <text x="576" y="112" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ddr)">余り</text>
+      <text x="511" y="124" text-anchor="middle" font-size="10.5" fill="var(--ddr)" font-weight="700">DDR が出せるのはここまで</text>
+
+      <rect x="586" y="64" width="56" height="110" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="614" y="124" text-anchor="middle" font-size="10.5" fill="currentColor">PL</text>
+
+      <text x="511" y="188" text-anchor="middle" font-size="13" font-family="var(--mono)" font-weight="700" fill="currentColor">1.97</text>
+      <text x="511" y="206" text-anchor="middle" font-size="10" fill="var(--path)">道幅の 86.0% ← 14% 余った</text>
+      <text x="511" y="224" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ddr)">DDR の 93.6% ← 張り付いた</text>
+
+      <text x="511" y="252" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".75">詰まっている場所が</text>
+      <text x="511" y="270" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--ddr)">DDR 側に移った</text>
+    </svg>
+    <figcaption>
+      <b>図4 ／ ボトルネックが移動した瞬間。</b>
+      道を倍にしたのに、流れた量は <span class="num">1.13 → 1.97</span>、つまり
+      <b>1.74 倍にしかなりませんでした</b>。2.00 倍にならず、しかも道幅のほうに 14% の余りが出た。
+      これは「もう出口が広くても、DDR が出してくれない」状態です。
+      <b>HP ポートはあと2本空いていますが、足しても増えません。</b>
+    </figcaption>
+  </figure>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead>
+      <tr><th>構成</th><th>クロック</th><th>道幅</th><th>実測</th><th>道幅比</th><th>DDR比</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>HP 1本</td><td>100.00 MHz</td><td>0.80</td><td>0.79</td><td>99.1%</td><td>37.8%</td></tr>
+      <tr><td>HP 1本</td><td>142.86 MHz</td><td>1.14</td><td>1.13</td><td>98.7%</td><td>53.7%</td></tr>
+      <tr class="hit"><td><strong>HP 2本</strong></td><td>142.86 MHz</td><td>2.29</td><td><strong>1.97</strong></td><td>86.0%</td><td><strong>93.6%</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="keyline">
+    このボードで PL が DDR から読み出せる上限は
+    <span class="num">1.97 GB/s</span>。理論値 2.1 の 93.6% で、
+    残りはリフレッシュなどの避けられない損失です。<b>これが設計値になります。</b>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">06</span><span>この数字が設計に効く</span></h2>
+  <p class="sub">what 1.97 GB/s buys you</p>
+
+  <p>
+    帯域が決まると、<b>必要な演算器の数が割り算一つで出ます</b>。
+    INT8 では1バイト読むごとに掛け算1回。142.86 MHz で 1.97 GB/s ということは、
+    <span class="num">1.97 ÷ 0.14286 ≒ 13.8</span>、つまり
+    <b>1クロックあたり約14バイトが届く</b>。だから掛け算器も14個あれば足ります。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 250" role="img" aria-label="XC7Z020が持つDSP220個のうち、実測帯域1.97GB/sを食い切るのに必要なINT8掛け算器は14個で、全体の6パーセントにすぎないことを示す点の図。">
+      <text x="20" y="26" font-size="12.5" font-weight="700" fill="currentColor">このチップが持つ掛け算器（DSP）＝ 220 個</text>
+      <!-- 220 dots: 22 cols x 10 rows, spacing 15, start x=22 y=48 -->
+      <g fill="currentColor" opacity=".18">
+        <!-- rows -->
+        <g><circle cx="28" cy="54" r="4.4"/><circle cx="43" cy="54" r="4.4"/><circle cx="58" cy="54" r="4.4"/><circle cx="73" cy="54" r="4.4"/><circle cx="88" cy="54" r="4.4"/><circle cx="103" cy="54" r="4.4"/><circle cx="118" cy="54" r="4.4"/><circle cx="133" cy="54" r="4.4"/><circle cx="148" cy="54" r="4.4"/><circle cx="163" cy="54" r="4.4"/><circle cx="178" cy="54" r="4.4"/><circle cx="193" cy="54" r="4.4"/><circle cx="208" cy="54" r="4.4"/><circle cx="223" cy="54" r="4.4"/><circle cx="238" cy="54" r="4.4"/><circle cx="253" cy="54" r="4.4"/><circle cx="268" cy="54" r="4.4"/><circle cx="283" cy="54" r="4.4"/><circle cx="298" cy="54" r="4.4"/><circle cx="313" cy="54" r="4.4"/><circle cx="328" cy="54" r="4.4"/><circle cx="343" cy="54" r="4.4"/></g>
+        <g><circle cx="28" cy="69" r="4.4"/><circle cx="43" cy="69" r="4.4"/><circle cx="58" cy="69" r="4.4"/><circle cx="73" cy="69" r="4.4"/><circle cx="88" cy="69" r="4.4"/><circle cx="103" cy="69" r="4.4"/><circle cx="118" cy="69" r="4.4"/><circle cx="133" cy="69" r="4.4"/><circle cx="148" cy="69" r="4.4"/><circle cx="163" cy="69" r="4.4"/><circle cx="178" cy="69" r="4.4"/><circle cx="193" cy="69" r="4.4"/><circle cx="208" cy="69" r="4.4"/><circle cx="223" cy="69" r="4.4"/><circle cx="238" cy="69" r="4.4"/><circle cx="253" cy="69" r="4.4"/><circle cx="268" cy="69" r="4.4"/><circle cx="283" cy="69" r="4.4"/><circle cx="298" cy="69" r="4.4"/><circle cx="313" cy="69" r="4.4"/><circle cx="328" cy="69" r="4.4"/><circle cx="343" cy="69" r="4.4"/></g>
+        <g><circle cx="28" cy="84" r="4.4"/><circle cx="43" cy="84" r="4.4"/><circle cx="58" cy="84" r="4.4"/><circle cx="73" cy="84" r="4.4"/><circle cx="88" cy="84" r="4.4"/><circle cx="103" cy="84" r="4.4"/><circle cx="118" cy="84" r="4.4"/><circle cx="133" cy="84" r="4.4"/><circle cx="148" cy="84" r="4.4"/><circle cx="163" cy="84" r="4.4"/><circle cx="178" cy="84" r="4.4"/><circle cx="193" cy="84" r="4.4"/><circle cx="208" cy="84" r="4.4"/><circle cx="223" cy="84" r="4.4"/><circle cx="238" cy="84" r="4.4"/><circle cx="253" cy="84" r="4.4"/><circle cx="268" cy="84" r="4.4"/><circle cx="283" cy="84" r="4.4"/><circle cx="298" cy="84" r="4.4"/><circle cx="313" cy="84" r="4.4"/><circle cx="328" cy="84" r="4.4"/><circle cx="343" cy="84" r="4.4"/></g>
+        <g><circle cx="28" cy="99" r="4.4"/><circle cx="43" cy="99" r="4.4"/><circle cx="58" cy="99" r="4.4"/><circle cx="73" cy="99" r="4.4"/><circle cx="88" cy="99" r="4.4"/><circle cx="103" cy="99" r="4.4"/><circle cx="118" cy="99" r="4.4"/><circle cx="133" cy="99" r="4.4"/><circle cx="148" cy="99" r="4.4"/><circle cx="163" cy="99" r="4.4"/><circle cx="178" cy="99" r="4.4"/><circle cx="193" cy="99" r="4.4"/><circle cx="208" cy="99" r="4.4"/><circle cx="223" cy="99" r="4.4"/><circle cx="238" cy="99" r="4.4"/><circle cx="253" cy="99" r="4.4"/><circle cx="268" cy="99" r="4.4"/><circle cx="283" cy="99" r="4.4"/><circle cx="298" cy="99" r="4.4"/><circle cx="313" cy="99" r="4.4"/><circle cx="328" cy="99" r="4.4"/><circle cx="343" cy="99" r="4.4"/></g>
+        <g><circle cx="28" cy="114" r="4.4"/><circle cx="43" cy="114" r="4.4"/><circle cx="58" cy="114" r="4.4"/><circle cx="73" cy="114" r="4.4"/><circle cx="88" cy="114" r="4.4"/><circle cx="103" cy="114" r="4.4"/><circle cx="118" cy="114" r="4.4"/><circle cx="133" cy="114" r="4.4"/><circle cx="148" cy="114" r="4.4"/><circle cx="163" cy="114" r="4.4"/><circle cx="178" cy="114" r="4.4"/><circle cx="193" cy="114" r="4.4"/><circle cx="208" cy="114" r="4.4"/><circle cx="223" cy="114" r="4.4"/><circle cx="238" cy="114" r="4.4"/><circle cx="253" cy="114" r="4.4"/><circle cx="268" cy="114" r="4.4"/><circle cx="283" cy="114" r="4.4"/><circle cx="298" cy="114" r="4.4"/><circle cx="313" cy="114" r="4.4"/><circle cx="328" cy="114" r="4.4"/><circle cx="343" cy="114" r="4.4"/></g>
+        <g><circle cx="28" cy="129" r="4.4"/><circle cx="43" cy="129" r="4.4"/><circle cx="58" cy="129" r="4.4"/><circle cx="73" cy="129" r="4.4"/><circle cx="88" cy="129" r="4.4"/><circle cx="103" cy="129" r="4.4"/><circle cx="118" cy="129" r="4.4"/><circle cx="133" cy="129" r="4.4"/><circle cx="148" cy="129" r="4.4"/><circle cx="163" cy="129" r="4.4"/><circle cx="178" cy="129" r="4.4"/><circle cx="193" cy="129" r="4.4"/><circle cx="208" cy="129" r="4.4"/><circle cx="223" cy="129" r="4.4"/><circle cx="238" cy="129" r="4.4"/><circle cx="253" cy="129" r="4.4"/><circle cx="268" cy="129" r="4.4"/><circle cx="283" cy="129" r="4.4"/><circle cx="298" cy="129" r="4.4"/><circle cx="313" cy="129" r="4.4"/><circle cx="328" cy="129" r="4.4"/><circle cx="343" cy="129" r="4.4"/></g>
+        <g><circle cx="28" cy="144" r="4.4"/><circle cx="43" cy="144" r="4.4"/><circle cx="58" cy="144" r="4.4"/><circle cx="73" cy="144" r="4.4"/><circle cx="88" cy="144" r="4.4"/><circle cx="103" cy="144" r="4.4"/><circle cx="118" cy="144" r="4.4"/><circle cx="133" cy="144" r="4.4"/><circle cx="148" cy="144" r="4.4"/><circle cx="163" cy="144" r="4.4"/><circle cx="178" cy="144" r="4.4"/><circle cx="193" cy="144" r="4.4"/><circle cx="208" cy="144" r="4.4"/><circle cx="223" cy="144" r="4.4"/><circle cx="238" cy="144" r="4.4"/><circle cx="253" cy="144" r="4.4"/><circle cx="268" cy="144" r="4.4"/><circle cx="283" cy="144" r="4.4"/><circle cx="298" cy="144" r="4.4"/><circle cx="313" cy="144" r="4.4"/><circle cx="328" cy="144" r="4.4"/><circle cx="343" cy="144" r="4.4"/></g>
+        <g><circle cx="28" cy="159" r="4.4"/><circle cx="43" cy="159" r="4.4"/><circle cx="58" cy="159" r="4.4"/><circle cx="73" cy="159" r="4.4"/><circle cx="88" cy="159" r="4.4"/><circle cx="103" cy="159" r="4.4"/><circle cx="118" cy="159" r="4.4"/><circle cx="133" cy="159" r="4.4"/><circle cx="148" cy="159" r="4.4"/><circle cx="163" cy="159" r="4.4"/><circle cx="178" cy="159" r="4.4"/><circle cx="193" cy="159" r="4.4"/><circle cx="208" cy="159" r="4.4"/><circle cx="223" cy="159" r="4.4"/><circle cx="238" cy="159" r="4.4"/><circle cx="253" cy="159" r="4.4"/><circle cx="268" cy="159" r="4.4"/><circle cx="283" cy="159" r="4.4"/><circle cx="298" cy="159" r="4.4"/><circle cx="313" cy="159" r="4.4"/><circle cx="328" cy="159" r="4.4"/><circle cx="343" cy="159" r="4.4"/></g>
+        <g><circle cx="28" cy="174" r="4.4"/><circle cx="43" cy="174" r="4.4"/><circle cx="58" cy="174" r="4.4"/><circle cx="73" cy="174" r="4.4"/><circle cx="88" cy="174" r="4.4"/><circle cx="103" cy="174" r="4.4"/><circle cx="118" cy="174" r="4.4"/><circle cx="133" cy="174" r="4.4"/><circle cx="148" cy="174" r="4.4"/><circle cx="163" cy="174" r="4.4"/><circle cx="178" cy="174" r="4.4"/><circle cx="193" cy="174" r="4.4"/><circle cx="208" cy="174" r="4.4"/><circle cx="223" cy="174" r="4.4"/><circle cx="238" cy="174" r="4.4"/><circle cx="253" cy="174" r="4.4"/><circle cx="268" cy="174" r="4.4"/><circle cx="283" cy="174" r="4.4"/><circle cx="298" cy="174" r="4.4"/><circle cx="313" cy="174" r="4.4"/><circle cx="328" cy="174" r="4.4"/><circle cx="343" cy="174" r="4.4"/></g>
+        <g><circle cx="28" cy="189" r="4.4"/><circle cx="43" cy="189" r="4.4"/><circle cx="58" cy="189" r="4.4"/><circle cx="73" cy="189" r="4.4"/><circle cx="88" cy="189" r="4.4"/><circle cx="103" cy="189" r="4.4"/><circle cx="118" cy="189" r="4.4"/><circle cx="133" cy="189" r="4.4"/><circle cx="148" cy="189" r="4.4"/><circle cx="163" cy="189" r="4.4"/><circle cx="178" cy="189" r="4.4"/><circle cx="193" cy="189" r="4.4"/><circle cx="208" cy="189" r="4.4"/><circle cx="223" cy="189" r="4.4"/><circle cx="238" cy="189" r="4.4"/><circle cx="253" cy="189" r="4.4"/><circle cx="268" cy="189" r="4.4"/><circle cx="283" cy="189" r="4.4"/><circle cx="298" cy="189" r="4.4"/><circle cx="313" cy="189" r="4.4"/><circle cx="328" cy="189" r="4.4"/><circle cx="343" cy="189" r="4.4"/></g>
+      </g>
+
+      <!-- 使う14個 -->
+      <g fill="var(--ddr)">
+        <circle cx="28" cy="54" r="5.2"/><circle cx="43" cy="54" r="5.2"/><circle cx="58" cy="54" r="5.2"/><circle cx="73" cy="54" r="5.2"/><circle cx="88" cy="54" r="5.2"/><circle cx="103" cy="54" r="5.2"/><circle cx="118" cy="54" r="5.2"/><circle cx="133" cy="54" r="5.2"/><circle cx="148" cy="54" r="5.2"/><circle cx="163" cy="54" r="5.2"/><circle cx="178" cy="54" r="5.2"/><circle cx="193" cy="54" r="5.2"/><circle cx="208" cy="54" r="5.2"/><circle cx="223" cy="54" r="5.2"/>
+      </g>
+      <path d="M231,54 L268,54" stroke="var(--ddr)" stroke-width="1.4"/>
+      <text x="276" y="46" font-size="11.5" font-weight="700" fill="var(--ddr)">この 14 個で</text>
+      <text x="276" y="62" font-size="11.5" font-weight="700" fill="var(--ddr)">1.97 GB/s を食い切れる</text>
+
+      <line x1="20" y1="212" x2="740" y2="212" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="20" y="234" font-size="12" fill="currentColor" opacity=".8">
+        使うのは <tspan font-family="var(--mono)" font-weight="700">6%</tspan>。足りないのは演算器ではなく、そこへ運ぶ道のほう。
+      </text>
+    </svg>
+    <figcaption>
+      <b>図5 ／ 演算器は桁で余る。</b>
+      「FPGA でお手製 GPU を作る」という発想が、この計画では的外れだと分かります。
+      作るべきなのは<b>細い演算器と、太い給餌経路</b>です。
+    </figcaption>
+  </figure>
+
+  <div class="callout win">
+    <span class="label">三値化がなぜ効くのか</span>
+    <p>
+      重みを <b>−1 / 0 / +1 の三値</b>にすると、1バイトに約5個詰められます（約 0.2 B/重み）。
+      同じ 1.97 GB/s の道で <b>毎秒 9.8 G 個</b>の重みを運べる計算になり、<b>実質5倍</b>です。
+      おまけに掛け算が「足す・引く・何もしない」に変わるので、DSP すら要らず LUT で組めます。
+      <b>帯域が壁である以上、伸ばすべきはここ</b>——というのが今回の測定で改めて裏づけられました。
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">07</span><span>訂正</span></h2>
+  <p class="sub">what I got wrong last time</p>
+
+  <div class="callout fix">
+    <span class="label">前回の記述は誤りでした</span>
+    <p>
+      「PL は DDR の <b>74%</b> を引き出せた。CPU の 33% に対して倍以上」と書きました。
+      合計 1.54 GB/s という測定値そのものは正しいのですが、
+      <b>あれは DDR の話ではなく、道幅 0.80 GB/s の 96% に張り付いていた</b>だけでした。
+      当時 DDR は半分も使っていません。
+    </p>
+    <p>
+      結論の向き——<b>CPU より PL のほうが DDR を引き出せる</b>——は変わりません。
+      むしろ正しい数字は <b>93.6%</b> で、CPU の 33%（0.70 GB/s）に対して <b>2.8 倍</b>。
+      前回より強い結果です。ただし<b>「HP ポートを2本使う」ことが条件</b>で、
+      1本では 53.7% までしか届きません。これは前回には無かった、設計上の重要な条件です。
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">08</span><span>次にやること</span></h2>
+  <p class="sub">stage 3</p>
+
+  <p>
+    ヌルシンクは「捨てるだけ」の回路でした。ここを<b>本物の掛け算器の並び（MAC アレイ）に差し替え</b>ます。
+    問うのは一点だけです——<b>計算させても 1.97 GB/s を保てるか</b>。
+    保てれば、あとは重みの表現を三値に変えていく段階に入ります。
+  </p>
+  <ul>
+    <li><b>段階3</b>　INT8 の MAC アレイ 14個。帯域が落ちないことを確認する</li>
+    <li><b>段階4</b>　三値（BitNet b1.58）化。LUT で加減算。ここが本命</li>
+  </ul>
+
+  <div class="callout win">
+    <span class="label">2026-09-08 追記 — どちらも済みました</span>
+    <p>
+      段階3は <b>1.91 GB/s（計算なしの 96.7%）</b>、段階4の三値は
+      <b>9.16 G重み/s（INT8 の 4.8 倍）で DSP は 0 個</b>でした。
+      ここで確定させた設計値 1.97 GB/s が、そのまま両方の物差しになっています。
+      続きは <a href="03-the-wall-does-not-move.html">「壁は動かない」</a>へ。
+    </p>
+  </div>
+</section>
+
+<footer>
+  PYNQ-Z1 / XC7Z020-1CLG400C ・ Vivado 2024.1（Docker + Rosetta 2）・ PYNQ 3.1.1<br>
+  数値はすべて実機での実測（32 MB × 5回の最速値）。理論値と明記したもの以外は試算ではありません。
+</footer>
+
+</div>
+<!-- nav -->
+<nav class="jnav foot" aria-label="開発記録のナビゲーション">
+  <a href="../index.html">開発記録の目次</a>
+  <a href="01-cpu-to-fabric.html" rel="prev">← 前: CPU からファブリックへ</a>
+  <a href="03-the-wall-does-not-move.html" rel="next">次: 壁は動かない →</a>
+  <a class="lang" href="../en/02-two-ceilings.html" hreflang="en" lang="en">English</a>
+</nav>
+<!-- /nav -->
+</body>
+</html>

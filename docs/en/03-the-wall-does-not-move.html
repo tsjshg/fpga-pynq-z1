@@ -1,0 +1,788 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Wall Doesn't Move</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=M+PLUS+1+Code:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --paper:#F4F6F7;
+    --card:#FFFFFF;
+    --ink:#1A2027;
+    --ink-2:#5C666F;
+    --ink-3:#8B959D;
+    --rule:#D9DFE3;
+    --rule-2:#EAEEF0;
+    --path:#1F5FA9;      /* datapath width (PL-side ceiling) */
+    --path-soft:#E4EDF7;
+    --ddr:#C0701A;       /* DDR (memory-side wall) */
+    --ddr-soft:#F9EEE1;
+    --tri:#136B57;       /* ternary */
+    --tri-soft:#DFF0EA;
+    --wrong:#A33A3A;
+    --wrong-soft:#F7E9E9;
+    --serif:"Shippori Mincho B1",'Hiragino Mincho ProN',"Yu Mincho",serif;
+    --sans:"Zen Kaku Gothic New",'Hiragino Sans',"Yu Gothic",system-ui,sans-serif;
+    --mono:"M PLUS 1 Code",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+      --rule:#2E363D; --rule-2:#232A30;
+      --path:#6FA8E8; --path-soft:#1C2A3A;
+      --ddr:#E0A05B;  --ddr-soft:#332617;
+      --tri:#5CC4A7;  --tri-soft:#12302A;
+      --wrong:#DF8C8C; --wrong-soft:#33201F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+    --rule:#2E363D; --rule-2:#232A30;
+    --path:#6FA8E8; --path-soft:#1C2A3A;
+    --ddr:#E0A05B;  --ddr-soft:#332617;
+    --tri:#5CC4A7;  --tri-soft:#12302A;
+    --wrong:#DF8C8C; --wrong-soft:#33201F;
+  }
+
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--sans);
+    font-size:16px; line-height:1.9; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px 96px;}
+
+  header{padding:72px 0 40px;border-bottom:1px solid var(--rule);}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+    color:var(--ink-3);text-transform:uppercase;margin-bottom:20px;
+  }
+  h1{
+    font-family:var(--serif);font-weight:700;
+    font-size:clamp(38px,7vw,58px);line-height:1.25;
+    margin:0 0 20px;text-wrap:balance;letter-spacing:.01em;
+  }
+  .standfirst{font-size:17px;color:var(--ink-2);margin:0;max-width:60ch;}
+
+  section{margin-top:60px;}
+  h2{
+    font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.5;
+    margin:0 0 8px;display:flex;gap:16px;align-items:baseline;text-wrap:balance;
+  }
+  h2 .n{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--path);flex:none;padding-top:2px;}
+  h2 + .sub{
+    font-family:var(--mono);font-size:12px;color:var(--ink-3);
+    margin:0 0 24px 39px;letter-spacing:.04em;
+  }
+  p{margin:0 0 18px;}
+
+  figure{
+    margin:34px 0;background:var(--card);border:1px solid var(--rule);
+    border-radius:3px;padding:26px 22px 18px;
+  }
+  figure svg{display:block;width:100%;max-width:100%;height:auto;}
+  figcaption{
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--rule-2);
+    font-size:13px;line-height:1.75;color:var(--ink-2);
+  }
+  figcaption b{color:var(--ink);font-weight:700;}
+
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .tbl-scroll{overflow-x:auto;margin:26px 0;}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px;}
+  th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--rule-2);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule);
+  }
+  tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  tbody td:first-child{font-family:var(--sans);}
+  tr.hit td{background:var(--tri-soft);}
+  tr.hit td strong{color:var(--tri);}
+
+  .callout{
+    border-left:3px solid var(--path);background:var(--path-soft);
+    padding:18px 20px;margin:28px 0;border-radius:0 3px 3px 0;
+  }
+  .callout p:last-child{margin-bottom:0;}
+  .callout .label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:var(--path);display:block;margin-bottom:8px;
+  }
+  .callout.fix{border-left-color:var(--wrong);background:var(--wrong-soft);}
+  .callout.fix .label{color:var(--wrong);}
+  .callout.win{border-left-color:var(--tri);background:var(--tri-soft);}
+  .callout.win .label{color:var(--tri);}
+
+  .keyline{
+    font-family:var(--serif);font-size:22px;line-height:1.7;margin:34px 0;padding:22px 0;
+    border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);text-wrap:balance;
+  }
+  .keyline .num{font-size:26px;}
+
+  ul{margin:0 0 18px;padding-left:1.3em;}
+  li{margin-bottom:10px;}
+  code{font-family:var(--mono);font-size:.9em;background:var(--rule-2);padding:1px 5px;border-radius:3px;}
+  a{color:var(--path);text-underline-offset:2px;}
+
+  footer{margin-top:72px;padding-top:26px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3);}
+</style>
+<!-- nav -->
+<style>
+  body{margin:0}
+  img{max-width:100%}
+  .jnav{max-width:760px;margin:0 auto;padding:14px 16px 0;display:flex;flex-wrap:wrap;
+        gap:4px 18px;font-size:12.5px;line-height:1.7;opacity:.8}
+  .jnav.foot{padding:0 16px 40px}
+  .jnav a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
+  .jnav a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  .jnav .lang{margin-left:auto}
+  @media (min-width:600px){ .jnav{padding:14px 24px 0} .jnav.foot{padding:0 24px 40px} }
+</style>
+<!-- /nav -->
+</head>
+<body>
+<!-- nav -->
+<nav class="jnav" aria-label="Journal navigation">
+  <a href="../index.html">Journal index</a>
+  <a href="02-two-ceilings.html" rel="prev">← Previous: Two Ceilings</a>
+  <a href="04-reaching-the-wall.html" rel="next">Next: Reaching the Wall →</a>
+  <a class="lang" href="../ja/03-the-wall-does-not-move.html" hreflang="ja" lang="ja">日本語</a>
+</nav>
+<!-- /nav -->
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">PYNQ-Z1 · Stage 2 → 4 · 2026-09-08</div>
+  <h1>The Wall Doesn't Move</h1>
+  <p class="standfirst">
+    The memory wall sits at <span class="num">1.97 GB/s</span>, and no design moves it.
+    So I stopped widening the road and <b>made the cargo smaller instead</b>.
+    With ternary weights, the same wall delivers <span class="num">4.8×</span> as many weights.
+    Not a single multiplier is used.
+  </p>
+  <p class="standfirst" style="margin-top:14px">
+    <b>Update (2026-09-13):</b> I later measured "everything except the matrix multiply"
+    and found that <b>attention takes 83 ms on the CPU</b>. I added this to section 7.
+  </p>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">01</span><span>What the three stages did</span></h2>
+  <p class="sub">what the three stages measured</p>
+
+  <p>
+    In Stage 2 I measured <b>where the wall is</b>. In Stage 3 I built a circuit that can
+    <b>compute right up to the wall</b>. In Stage 4 I pulled <b>5× out of the same wall</b>.
+    Everything was measured on this one board.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 380" role="img" aria-label="The top panel shows bytes moved from DDR: Stage 2 at 1.97 gigabytes per second, Stage 3 at 1.91, Stage 4 at 1.83, almost unchanged. The bottom panel shows weights processed: Stage 3 INT8 at 1.91 billion per second versus Stage 4 ternary at 9.16 billion, 4.8 times as many. The amount moved is the same, but the number of weights extracted differs by an order of magnitude.">
+      <!-- ===== top: bytes ===== -->
+      <text x="40" y="34" font-size="13" font-weight="700" fill="currentColor">Bytes moved from DDR</text>
+      <text x="220" y="34" font-size="11.5" fill="currentColor" opacity=".6">GB/s · all about the same = the wall</text>
+
+      <g stroke="currentColor" stroke-width="1" opacity=".13">
+        <line x1="297" y1="48" x2="297" y2="170"/>
+        <line x1="404" y1="48" x2="404" y2="170"/>
+        <line x1="510" y1="48" x2="510" y2="170"/>
+        <line x1="617" y1="48" x2="617" y2="170"/>
+      </g>
+      <line x1="190" y1="48" x2="190" y2="170" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+
+      <!-- wall -->
+      <line x1="611" y1="44" x2="611" y2="176" stroke="var(--ddr)" stroke-width="2" stroke-dasharray="5 4"/>
+      <text x="611" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ddr)">wall 1.97</text>
+
+      <text x="180" y="76" text-anchor="end" font-size="12.5" fill="currentColor">Stage 2 · no compute</text>
+      <rect x="190" y="58" width="421" height="26" fill="var(--ddr)" opacity=".55"/>
+      <text x="200" y="76" font-size="12" font-family="var(--mono)" font-weight="700" fill="#241505">1.97</text>
+
+      <text x="180" y="114" text-anchor="end" font-size="12.5" fill="currentColor">Stage 3 · INT8</text>
+      <rect x="190" y="96" width="408" height="26" fill="var(--path)" opacity=".75"/>
+      <text x="200" y="114" font-size="12" font-family="var(--mono)" font-weight="700" fill="#fff">1.91</text>
+
+      <text x="180" y="152" text-anchor="end" font-size="12.5" fill="currentColor">Stage 4 · ternary</text>
+      <rect x="190" y="134" width="391" height="26" fill="var(--tri)" opacity=".8"/>
+      <text x="200" y="152" font-size="12" font-family="var(--mono)" font-weight="700" fill="#fff">1.83</text>
+
+      <line x1="190" y1="176" x2="670" y2="176" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+      <g font-family="var(--mono)" font-size="10" fill="currentColor" opacity=".5">
+        <text x="190" y="192" text-anchor="middle">0</text>
+        <text x="404" y="192" text-anchor="middle">1.0</text>
+        <text x="617" y="192" text-anchor="middle">2.0</text>
+      </g>
+
+      <line x1="40" y1="216" x2="720" y2="216" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- ===== bottom: weights ===== -->
+      <text x="40" y="250" font-size="13" font-weight="700" fill="currentColor">Weights extracted</text>
+      <text x="200" y="250" font-size="11.5" fill="currentColor" opacity=".6">G weights/s · this is what grew 4.8×</text>
+
+      <g stroke="currentColor" stroke-width="1" opacity=".13">
+        <line x1="284" y1="262" x2="284" y2="346"/>
+        <line x1="378" y1="262" x2="378" y2="346"/>
+        <line x1="472" y1="262" x2="472" y2="346"/>
+        <line x1="566" y1="262" x2="566" y2="346"/>
+        <line x1="660" y1="262" x2="660" y2="346"/>
+      </g>
+      <line x1="190" y1="262" x2="190" y2="346" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+
+      <text x="180" y="290" text-anchor="end" font-size="12.5" fill="currentColor">Stage 3 · INT8</text>
+      <rect x="190" y="272" width="90" height="26" fill="var(--path)" opacity=".75"/>
+      <text x="290" y="290" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">1.91</text>
+
+      <text x="180" y="328" text-anchor="end" font-size="12.5" fill="currentColor">Stage 4 · ternary</text>
+      <rect x="190" y="310" width="431" height="26" fill="var(--tri)" opacity=".8"/>
+      <text x="200" y="328" font-size="12" font-family="var(--mono)" font-weight="700" fill="#fff">9.16</text>
+      <text x="631" y="328" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--tri)">4.8×</text>
+
+      <line x1="190" y1="346" x2="670" y2="346" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+      <g font-family="var(--mono)" font-size="10" fill="currentColor" opacity=".5">
+        <text x="190" y="362" text-anchor="middle">0</text>
+        <text x="378" y="362" text-anchor="middle">4</text>
+        <text x="566" y="362" text-anchor="middle">8</text>
+      </g>
+    </svg>
+    <figcaption>
+      <b>Figure 1 / I didn't change how much was moved. I changed how much came out of it.</b>
+      The top rows are all about the same. That is the wall, and it doesn't move.
+      What changed is the bottom—<b>how many weights come out of the same single byte</b>.
+      INT8 gives 1. Ternary gives 5. The 4.8× came not from faster multiplies or more compute units,
+      but from <b>how the data is packed</b>.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">02</span><span>Stage 2 · Measuring where the wall is</span></h2>
+  <p class="sub">where the wall actually is</p>
+
+  <p>
+    The first job was to pin down "how fast can I read at all." I wrote this up in detail in
+    <a href="02-two-ceilings.html">a separate entry (Two Ceilings)</a>,
+    so here are just the key points.
+  </p>
+  <p>
+    There are two ceilings. <b>The speed of the DDR itself</b> (2.1 GB/s, fixed when you buy the board), and
+    <b>the datapath width on the PL side</b> (8 bytes × clock, which design can change).
+    With one HP port, the datapath width runs out first and only half the DDR gets used.
+    <b>Only with two ports did the DDR side saturate.</b>
+  </p>
+
+  <div class="keyline">
+    The real limit of this board is <span class="num">1.97 GB/s</span>.
+    That is 93.6% of the theoretical 2.1. The rest is unavoidable loss such as refresh.
+    <b>From here on, I design around this number.</b>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">03</span><span>Stage 3 · Computing up to the wall</span></h2>
+  <p class="sub">does computing cost bandwidth?</p>
+
+  <p>
+    In Stage 2 I used <b>a circuit that just accepts data and throws it away</b>.
+    I swapped that for real multipliers. There was only one question:
+    <b>can it hold 1.97 GB/s while actually computing?</b>
+  </p>
+  <p>
+    It could easily have failed. If the arithmetic can't keep up, the circuit stalls the upstream,
+    and bandwidth drops the moment that happens. So I set one absolute design rule:
+    <b>Keep the accept signal at 1, always. Never stall the upstream.</b>
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 330" role="img" aria-label="The Stage 3 circuit. In the input stream, the first 512 bytes are the input vector x, followed by rows of weights of 512 bytes each. Weights read from DDR pass through the AXI DMA into the MAC array, which handles 8 bytes per clock with 8 multipliers. Every 512 bytes produce a 32-bit result, which goes through a FIFO and is written back to DDR. The write-back is only 0.8 percent of the reads.">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- stream shape -->
+      <text x="40" y="34" font-size="13" font-weight="700" fill="currentColor">Shape of the input stream</text>
+
+      <rect x="40" y="48" width="130" height="42" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.4"/>
+      <text x="105" y="66" text-anchor="middle" font-size="12" font-weight="700" fill="var(--tri)">x (512 B)</text>
+      <text x="105" y="82" text-anchor="middle" font-size="10.5" fill="var(--tri)" opacity=".85">captured first</text>
+
+      <rect x="176" y="48" width="112" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="232" y="74" text-anchor="middle" font-size="12" fill="currentColor">row 1 (512 B)</text>
+      <rect x="294" y="48" width="112" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="350" y="74" text-anchor="middle" font-size="12" fill="currentColor">row 2 (512 B)</text>
+      <rect x="412" y="48" width="112" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="468" y="74" text-anchor="middle" font-size="12" fill="currentColor">row 3 (512 B)</text>
+      <text x="546" y="74" font-size="13" fill="currentColor" opacity=".55">… 65,535 rows</text>
+
+      <text x="40" y="112" font-size="11.5" fill="currentColor" opacity=".7">
+        x needs no separate path, so no AXI slave and no BRAM controller are required
+      </text>
+
+      <line x1="40" y1="136" x2="720" y2="136" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- circuit -->
+      <rect x="40" y="182" width="86" height="62" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="83" y="210" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">DDR</text>
+      <text x="83" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">weights</text>
+
+      <rect x="166" y="182" width="94" height="62" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="213" y="210" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">AXI DMA</text>
+      <text x="213" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">carrier</text>
+
+      <rect x="300" y="172" width="148" height="82" rx="3" fill="var(--path)" fill-opacity=".14" stroke="var(--path)" stroke-width="1.8"/>
+      <text x="374" y="198" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--path)">MAC array</text>
+      <text x="374" y="216" text-anchor="middle" font-size="10.5" fill="var(--path)" opacity=".9">8 multiplies/clock</text>
+      <text x="374" y="234" text-anchor="middle" font-size="10.5" fill="var(--path)" opacity=".9">5-stage pipeline</text>
+
+      <rect x="488" y="182" width="80" height="62" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="528" y="218" text-anchor="middle" font-size="12.5" fill="currentColor">FIFO</text>
+
+      <rect x="608" y="182" width="112" height="62" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="664" y="210" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">DDR</text>
+      <text x="664" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">results</text>
+
+      <line x1="128" y1="213" x2="160" y2="213" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+      <line x1="262" y1="213" x2="294" y2="213" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+      <line x1="450" y1="213" x2="482" y2="213" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+      <line x1="570" y1="213" x2="602" y2="213" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+
+      <text x="278" y="166" text-anchor="middle" font-size="10.5" fill="var(--path)">8 B/clock</text>
+      <text x="586" y="166" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">4 B / 512 B</text>
+
+      <text x="40" y="286" font-size="12" fill="currentColor" opacity=".8">
+        Results are only <tspan font-family="var(--mono)" font-weight="700">0.8%</tspan> of the reads. Writing them back costs almost no bandwidth
+      </text>
+      <text x="40" y="308" font-size="12" fill="var(--path)" font-weight="700">
+        Measured 1.91 GB/s = 96.7% of no-compute. All 131,070 rows match numpy
+      </text>
+    </svg>
+    <figcaption>
+      <b>Figure 2 / The throw-away circuit, swapped for one that multiplies.</b>
+      The key to this design is <b>capturing the first 512 bytes of the input stream as the input vector</b>.
+      Thanks to that, the whole separate path for distributing x (an AXI slave, a BRAM controller) is unnecessary.
+      Even with computation, <b>96.7%</b> of the bandwidth remained. Most of the gap is explained by writing back the results.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">04</span><span>Short by 0.5 ns</span></h2>
+  <p class="sub">the first build did not meet timing</p>
+
+  <p>
+    The first build failed <b>timing</b>. It was short by almost exactly <span class="num">0.5 ns</span>.
+    On an FPGA, "does the signal arrive within one clock" is an absolute requirement. If it doesn't,
+    there is no error. <b>Wrong values just flow through, silently.</b>
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 300" role="img" aria-label="Before the fix, one clock held four things in series: the counter output, routing, the distributed RAM read, and a multiply built from LUTs. Together they took 7.39 nanoseconds, over the 7.00 nanosecond limit. After the fix, everything up to the RAM read is in the first clock and the multiply is in the second clock. The multiply was also moved from LUTs to a DSP. The slack became plus 0.062 nanoseconds.">
+      <!-- time axis -->
+      <line x1="150" y1="252" x2="720" y2="252" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+      <g font-family="var(--mono)" font-size="10" fill="currentColor" opacity=".5">
+        <text x="150" y="268" text-anchor="middle">0</text>
+        <text x="290" y="268" text-anchor="middle">2</text>
+        <text x="430" y="268" text-anchor="middle">4</text>
+        <text x="570" y="268" text-anchor="middle">6</text>
+        <text x="700" y="268" text-anchor="middle">ns</text>
+      </g>
+
+      <!-- 7.00ns line -->
+      <line x1="640" y1="34" x2="640" y2="258" stroke="var(--wrong)" stroke-width="2" stroke-dasharray="5 4"/>
+      <text x="640" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="var(--wrong)">1 clock = 7.00 ns</text>
+
+      <!-- before -->
+      <text x="140" y="62" text-anchor="end" font-size="12.5" font-weight="700" fill="var(--wrong)">Before</text>
+      <text x="140" y="80" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">4 steps in 1 clock</text>
+
+      <rect x="150" y="48" width="33" height="30" fill="currentColor" opacity=".28"/>
+      <rect x="183" y="48" width="92" height="30" fill="currentColor" opacity=".20"/>
+      <rect x="275" y="48" width="18" height="30" fill="var(--path)" opacity=".55"/>
+      <rect x="293" y="48" width="374" height="30" fill="var(--wrong)" opacity=".55"/>
+
+      <text x="166" y="100" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">counter</text>
+      <text x="229" y="100" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">routing</text>
+      <text x="284" y="114" text-anchor="middle" font-size="9.5" fill="var(--path)">RAM</text>
+      <text x="480" y="100" text-anchor="middle" font-size="10.5" fill="var(--wrong)" font-weight="700">Multiply built from LUTs (9 logic levels)</text>
+
+      <text x="676" y="68" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">7.39</text>
+      <text x="676" y="84" font-size="10" fill="var(--wrong)">over</text>
+
+      <line x1="150" y1="140" x2="720" y2="140" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- after -->
+      <text x="140" y="172" text-anchor="end" font-size="12.5" font-weight="700" fill="var(--tri)">After</text>
+      <text x="140" y="190" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">split over 2 clocks</text>
+
+      <rect x="150" y="158" width="33" height="28" fill="currentColor" opacity=".28"/>
+      <rect x="183" y="158" width="92" height="28" fill="currentColor" opacity=".20"/>
+      <rect x="275" y="158" width="18" height="28" fill="var(--path)" opacity=".55"/>
+      <text x="330" y="176" font-size="10.5" fill="currentColor" opacity=".75">← clock 1: capture in a register here</text>
+
+      <rect x="150" y="200" width="196" height="28" fill="var(--tri)" opacity=".55"/>
+      <text x="248" y="219" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">DSP multiply</text>
+      <text x="360" y="219" font-size="10.5" fill="currentColor" opacity=".75">← clock 2: on a DSP, not in LUTs</text>
+
+      <text x="676" y="219" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--tri)">+0.062</text>
+    </svg>
+    <figcaption>
+      <b>Figure 3 / Two causes, stacked.</b>
+      ① <b>Reading x and multiplying were crammed into the same cycle.</b>
+      ② <b>The 8×8 multiply was judged "too small" for a DSP, so it was built from LUTs, 9 levels deep.</b>
+      I added one pipeline stage to separate them and forced the multiply onto a DSP with <code>use_dsp</code>.
+      That took it from <span class="num">−0.502 ns → +0.062 ns</span>.
+      The real oversight: the chip has 220 DSPs, and 0 of them were being used.
+    </figcaption>
+  </figure>
+
+  <div class="callout fix">
+    <span class="label">This kind of failure happens silently</span>
+    <p>
+      I could have run it anyway with timing unmet. It does run. But
+      <b>when data gets corrupted, it just returns wrong answers without saying anything</b>.
+      Then I could no longer tell whether a problem was in the circuit's logic or in timing.
+      So I fixed it first, before moving on to measurement.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">05</span><span>Stage 4 · Shrinking the cargo</span></h2>
+  <p class="sub">three values per weight, five weights per byte</p>
+
+  <p>
+    The wall doesn't move. So the only option is <b>to get more weights out of the same single byte</b>.
+    That is ternary quantization (BitNet b1.58). Each weight is rounded to one of three values: <b>−1 / 0 / +1</b>.
+  </p>
+  <p>
+    With three values, each weight carries <span class="num">log₂3 = 1.585</span> bits.
+    In practice I use <b>3⁵ = 243 ≤ 256</b> and pack <b>exactly 5 per byte</b>.
+    That is 5× the density of INT8.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 400" role="img" aria-label="The byte value 178 is split into base-3 digits 0, 2, 1, 0, 2. Subtracting 1 maps them to ternary minus 1, 0, plus 1, giving the weights 0, plus 1, 0, minus 1, plus 1. Each weight acts on an input vector value as one of three choices: pass it through, make it zero, or flip its sign. No multiplier is used. An adder tree sums the results at the end.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- 1 byte -->
+      <rect x="40" y="46" width="96" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.8"/>
+      <text x="88" y="70" text-anchor="middle" font-size="15" font-weight="700" font-family="var(--mono)" fill="var(--tri)">178</text>
+      <text x="88" y="88" text-anchor="middle" font-size="10.5" fill="var(--tri)" opacity=".85">1 byte</text>
+
+      <line x1="140" y1="72" x2="186" y2="72" stroke="currentColor" stroke-width="1.4" marker-end="url(#a2)"/>
+      <text x="163" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">lookup</text>
+
+      <!-- base-3 digits -->
+      <text x="196" y="36" font-size="11.5" fill="currentColor" opacity=".7">Base-3 digits (178 = 1 + 2·3 + 1·9 + 0·27 + 2·81)</text>
+      <g font-family="var(--mono)" font-size="14" font-weight="700">
+        <rect x="196" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="222" y="78" text-anchor="middle" fill="currentColor">1</text>
+        <rect x="256" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="282" y="78" text-anchor="middle" fill="currentColor">2</text>
+        <rect x="316" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="342" y="78" text-anchor="middle" fill="currentColor">1</text>
+        <rect x="376" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="402" y="78" text-anchor="middle" fill="currentColor">0</text>
+        <rect x="436" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="462" y="78" text-anchor="middle" fill="currentColor">2</text>
+      </g>
+
+      <line x1="500" y1="72" x2="546" y2="72" stroke="currentColor" stroke-width="1.4" marker-end="url(#a2)"/>
+      <text x="523" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">−1</text>
+
+      <text x="556" y="66" font-size="12" fill="currentColor">digit − 1</text>
+      <text x="556" y="84" font-size="12" font-weight="700" fill="var(--tri)">gives ternary</text>
+
+      <!-- ternary -->
+      <text x="196" y="130" font-size="11.5" fill="currentColor" opacity=".7">Weights (ternary)</text>
+      <g font-family="var(--mono)" font-size="15" font-weight="700">
+        <rect x="196" y="140" width="52" height="46" rx="3" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1.2"/>
+        <text x="222" y="169" text-anchor="middle" fill="currentColor" opacity=".5">0</text>
+        <rect x="256" y="140" width="52" height="46" rx="3" fill="var(--tri)" fill-opacity=".2" stroke="var(--tri)" stroke-width="1.4"/>
+        <text x="282" y="169" text-anchor="middle" fill="var(--tri)">+1</text>
+        <rect x="316" y="140" width="52" height="46" rx="3" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1.2"/>
+        <text x="342" y="169" text-anchor="middle" fill="currentColor" opacity=".5">0</text>
+        <rect x="376" y="140" width="52" height="46" rx="3" fill="var(--ddr)" fill-opacity=".2" stroke="var(--ddr)" stroke-width="1.4"/>
+        <text x="402" y="169" text-anchor="middle" fill="var(--ddr)">−1</text>
+        <rect x="436" y="140" width="52" height="46" rx="3" fill="var(--tri)" fill-opacity=".2" stroke="var(--tri)" stroke-width="1.4"/>
+        <text x="462" y="169" text-anchor="middle" fill="var(--tri)">+1</text>
+      </g>
+
+      <!-- x -->
+      <text x="196" y="216" font-size="11.5" fill="currentColor" opacity=".7">Input vector x</text>
+      <g font-family="var(--mono)" font-size="13">
+        <rect x="196" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="222" y="251" text-anchor="middle" fill="currentColor">x₀</text>
+        <rect x="256" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="282" y="251" text-anchor="middle" fill="currentColor">x₁</text>
+        <rect x="316" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="342" y="251" text-anchor="middle" fill="currentColor">x₂</text>
+        <rect x="376" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="402" y="251" text-anchor="middle" fill="currentColor">x₃</text>
+        <rect x="436" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="462" y="251" text-anchor="middle" fill="currentColor">x₄</text>
+      </g>
+
+      <!-- terms -->
+      <text x="196" y="296" font-size="11.5" fill="currentColor" opacity=".7">Resulting terms — a 3-way choice, not a multiply</text>
+      <g font-family="var(--mono)" font-size="13" font-weight="700">
+        <rect x="196" y="306" width="52" height="40" rx="3" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1"/>
+        <text x="222" y="331" text-anchor="middle" fill="currentColor" opacity=".5">0</text>
+        <rect x="256" y="306" width="52" height="40" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="282" y="331" text-anchor="middle" fill="var(--tri)">+x₁</text>
+        <rect x="316" y="306" width="52" height="40" rx="3" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1"/>
+        <text x="342" y="331" text-anchor="middle" fill="currentColor" opacity=".5">0</text>
+        <rect x="376" y="306" width="52" height="40" rx="3" fill="var(--ddr)" fill-opacity=".18" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="402" y="331" text-anchor="middle" fill="var(--ddr)">−x₃</text>
+        <rect x="436" y="306" width="52" height="40" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="462" y="331" text-anchor="middle" fill="var(--tri)">+x₄</text>
+      </g>
+
+      <line x1="500" y1="326" x2="546" y2="326" stroke="currentColor" stroke-width="1.4" marker-end="url(#a2)"/>
+      <rect x="552" y="300" width="168" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="636" y="322" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">Adder tree</text>
+      <text x="636" y="340" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">40 terms → 1</text>
+
+      <line x1="40" y1="370" x2="720" y2="370" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="392" font-size="12.5" font-weight="700" fill="var(--tri)">
+        "Pass through, zero out, flip the sign" — not a single multiplier appears here
+      </text>
+    </svg>
+    <figcaption>
+      <b>Figure 4 / A multiply turns into a 3-way choice.</b>
+      Since weights are only −1 / 0 / +1, <b>no multiplication happens at all</b>.
+      All that's needed is selecting, flipping the sign, and adding.
+      That is what "build it from LUTs, not DSPs" actually means.
+      One 8-byte beat yields <b>40</b> terms, so a 40-term adder tree is needed
+      (writing that by hand always goes wrong, so I emit it from a generator script).
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">06</span><span>The multipliers disappeared</span></h2>
+  <p class="sub">what it cost in silicon</p>
+
+  <p>
+    Here is how Stage 3 and Stage 4 used the chip's resources, side by side.
+    <b>This comparison is the thing I most wanted to show in this whole project.</b>
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 320" role="img" aria-label="Resource comparison between the Stage 3 INT8 version and the Stage 4 ternary version. LUTs went from 8,175 to 9,557, only 17 percent more. DSPs went from 20 to 0. Weight throughput went from 1.91 to 9.16 billion per second, 4.8 times. In exchange for a few LUTs, every multiplier was given up, and performance rose by an order of magnitude.">
+      <!-- LUT -->
+      <text x="40" y="38" font-size="12.5" font-weight="700" fill="currentColor">LUT</text>
+      <text x="86" y="38" font-size="11" fill="currentColor" opacity=".55">53,200 total</text>
+      <rect x="180" y="24" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="24" width="68" height="18" rx="2" fill="var(--path)" opacity=".75"/>
+      <text x="630" y="38" font-size="11.5" font-family="var(--mono)" fill="var(--path)">8,175 (15%)</text>
+
+      <rect x="180" y="52" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="52" width="79" height="18" rx="2" fill="var(--tri)" opacity=".8"/>
+      <text x="630" y="66" font-size="11.5" font-family="var(--mono)" fill="var(--tri)">9,557 (18%)</text>
+      <text x="40" y="66" font-size="11" fill="currentColor" opacity=".55">only +1,382</text>
+
+      <line x1="40" y1="94" x2="720" y2="94" stroke="currentColor" stroke-width="1" opacity=".14"/>
+
+      <!-- DSP -->
+      <text x="40" y="128" font-size="12.5" font-weight="700" fill="currentColor">DSP</text>
+      <text x="86" y="128" font-size="11" fill="currentColor" opacity=".55">220 total</text>
+      <rect x="180" y="114" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="114" width="40" height="18" rx="2" fill="var(--path)" opacity=".75"/>
+      <text x="630" y="128" font-size="11.5" font-family="var(--mono)" fill="var(--path)">20 (9%)</text>
+
+      <rect x="180" y="142" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <text x="630" y="156" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--tri)">0</text>
+      <text x="188" y="156" font-size="11" fill="var(--tri)" font-weight="700">none used</text>
+
+      <line x1="40" y1="184" x2="720" y2="184" stroke="currentColor" stroke-width="1" opacity=".14"/>
+
+      <!-- throughput -->
+      <text x="40" y="218" font-size="12.5" font-weight="700" fill="currentColor">Throughput</text>
+      <text x="40" y="246" font-size="11" fill="currentColor" opacity=".55">G weights/s</text>
+      <rect x="180" y="204" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="204" width="92" height="18" rx="2" fill="var(--path)" opacity=".75"/>
+      <text x="630" y="218" font-size="11.5" font-family="var(--mono)" fill="var(--path)">1.91</text>
+
+      <rect x="180" y="232" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="232" width="440" height="18" rx="2" fill="var(--tri)" opacity=".8"/>
+      <text x="630" y="246" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--tri)">9.16</text>
+
+      <line x1="40" y1="274" x2="720" y2="274" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="296" font-size="12.5" fill="currentColor">
+        <tspan fill="var(--path)" font-weight="700">■ Stage 3 INT8</tspan>
+        <tspan fill="currentColor" opacity=".5"> / </tspan>
+        <tspan fill="var(--tri)" font-weight="700">■ Stage 4 ternary</tspan>
+        <tspan fill="currentColor" opacity=".75"> — 17% more LUTs, every multiplier gone, 4.8×</tspan>
+      </text>
+    </svg>
+    <figcaption>
+      <b>Figure 5 / A few LUTs in exchange for giving up every multiplier.</b>
+      <b>On a chip with 220 DSPs, the main circuit uses not a single one.</b>
+      The guess I made at the very start of the project—"the bottleneck is bandwidth, not the number of compute units"—
+      held all the way to the end.
+    </figcaption>
+  </figure>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead>
+      <tr><th>Stage</th><th>Compute units</th><th>Read</th><th>Weight throughput</th><th>DSP</th><th>LUT</th><th>Checked vs numpy</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>2 · no compute</td><td>—</td><td>1.97</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>3 · INT8</td><td>16</td><td>1.91</td><td>1.91</td><td>20</td><td>8,175</td><td>131,070 rows</td></tr>
+      <tr class="hit"><td><strong>4 · ternary</strong></td><td>80</td><td>1.83</td><td><strong>9.16</strong></td><td><strong>0</strong></td><td>9,557</td><td>524,278 rows</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    The last column is the result of <b>checking every single row the PL produced against numpy</b>.
+    Fast but broken is worthless, so I did this at every stage.
+    In fact, a bug where the generator script's pipeline depth was off by one
+    <b>would not have been found without this check</b>—it shows up as "runs fine, but every answer is wrong."
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">07</span><span>What isn't done yet</span></h2>
+  <p class="sub">what this is not, yet</p>
+
+  <p>
+    At this speed, a ternary-quantized 135M-parameter model (27 MB of weights) works out to
+    <b>14.7 ms per token = about 68 tok/s</b>.
+    <b>But that is an upper bound for the matrix multiply alone.</b> Attention, layernorm, softmax and the KV cache
+    haven't been built at all yet.
+  </p>
+  <p>
+    So <b>I measured how heavy the rest actually is</b> (update, 2026-09-13).
+    I wrote everything except the matrix multiply in C at the real dimensions of SmolLM2-135M and ran it on the board's CPU.
+    <b>It was far heavier than expected, and it changed the premise of the plan.</b>
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 250" role="img" aria-label="Breakdown of the time per token, normalized to 100 percent for each context length. At context 128, the matrix multiply is 38 percent and attention 50 percent, for 26.2 tokens per second. At context 512, the matrix multiply is 14 percent and attention 82 percent, for 9.8 tokens per second. At context 2048, the matrix multiply is 4 percent and attention 95 percent, for 2.8 tokens per second. The longer the context, the more CPU attention dominates and the less the PL contributes.">
+      <text x="40" y="28" font-size="13" font-weight="700" fill="currentColor">Time per token, by part (normalized to 100%)</text>
+
+      <g font-size="11.5">
+        <rect x="40" y="44" width="16" height="10" fill="var(--tri)" opacity=".8"/>
+        <text x="62" y="53" fill="currentColor" opacity=".8">matmul (PL)</text>
+        <rect x="170" y="44" width="16" height="10" fill="var(--wrong)" opacity=".7"/>
+        <text x="192" y="53" fill="currentColor" opacity=".8">attention (CPU)</text>
+        <rect x="316" y="44" width="16" height="10" fill="currentColor" opacity=".28"/>
+        <text x="338" y="53" fill="currentColor" opacity=".8">small ops (CPU)</text>
+      </g>
+
+      <text x="180" y="92" text-anchor="end" font-size="12.5" fill="currentColor">context 128</text>
+      <rect x="190" y="72" width="185" height="30" fill="var(--tri)" opacity=".8"/>
+      <rect x="375" y="72" width="242" height="30" fill="var(--wrong)" opacity=".7"/>
+      <rect x="617" y="72" width="53" height="30" fill="currentColor" opacity=".28"/>
+      <text x="684" y="92" font-size="12" font-family="var(--mono)" font-weight="700" fill="currentColor">26.2 tok/s</text>
+
+      <text x="180" y="140" text-anchor="end" font-size="12.5" fill="currentColor">context 512</text>
+      <rect x="190" y="120" width="69" height="30" fill="var(--tri)" opacity=".8"/>
+      <rect x="259" y="120" width="391" height="30" fill="var(--wrong)" opacity=".7"/>
+      <rect x="650" y="120" width="20" height="30" fill="currentColor" opacity=".28"/>
+      <text x="684" y="140" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">9.8 tok/s</text>
+
+      <text x="180" y="188" text-anchor="end" font-size="12.5" fill="currentColor">context 2048</text>
+      <rect x="190" y="168" width="20" height="30" fill="var(--tri)" opacity=".8"/>
+      <rect x="210" y="168" width="455" height="30" fill="var(--wrong)" opacity=".7"/>
+      <rect x="665" y="168" width="5" height="30" fill="currentColor" opacity=".28"/>
+      <text x="684" y="188" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">2.8 tok/s</text>
+
+      <line x1="40" y1="216" x2="720" y2="216" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="238" font-size="12" fill="currentColor" opacity=".8">
+        The matmul doesn't depend on context length (always 14.68 ms). Only attention grows with it
+      </text>
+    </svg>
+    <figcaption>
+      <b>Figure 6 / How much of the whole the fast part actually covers.</b>
+      Green is the share handled by the circuits built in this entry.
+      <b>The longer the context, the thinner the green gets</b>—the matrix multiply doesn't depend on context length,
+      but attention grows in proportion to it. At context 2048, the PL's share is <b>4%</b>.
+      At that point the circuit barely helps at all.
+    </figcaption>
+  </figure>
+
+  <div class="callout fix">
+    <span class="label">Update, 2026-09-13 — "Matrix multiply on the PL, the rest on the CPU" doesn't work</span>
+    <p>
+      At context 512, <b>attention alone takes 83 ms</b>. That is <b>5.7×</b> the matrix multiply's 14.68 ms.
+      The whole system only reaches <b>9.8 tok/s</b>, one seventh of 68 tok/s.
+    </p>
+    <p>
+      <b>It isn't a bad implementation.</b> A naive version that converts to float took 158 ms.
+      Computing directly in INT8 still takes 83 ms, an effective <span class="num">0.21 G MAC/s</span>.
+      That is close to the measured upper limit of the CPU's INT8 dot product, 0.28 G MAC/s.
+      It is <b>the raw performance of the Cortex-A9</b>. Rewriting it won't make it shorter.
+    </p>
+  </div>
+
+  <p>
+    <b>The next step is clear. Attention becomes a circuit too.</b>
+    Luckily, what needs building is almost the same as the existing engine—<b>the KV cache is just another INT8 stream</b>,
+    and QK<sup>T</sup> and AV are nothing but dot products.
+  </p>
+  <p>
+    Only the sizes differ. With GQA, <b>3 K/V heads are shared by 9 heads</b>,
+    so each byte is reused <span class="num">3.15 times</span> (the matrix multiply used it once).
+    That means I want <b>48 MACs</b>—still only a little over 20% of the 220 DSPs.
+    Softmax's <code>exp</code> can also go into the circuit as a BRAM lookup table.
+  </p>
+
+  <div class="callout win">
+    <span class="label">What happens if I go that far (estimate)</span>
+    <p>
+      Attention becomes bandwidth-bound: <b>2.94 ms</b> at context 512.
+      The budget is <span class="num">14.68 + 2.94 + 4.2 ≈ 21.8 ms</span>, or <b>about 46 tok/s</b>.
+      On top of that, <b>it holds up much better as the context grows</b>—
+      the PL's bandwidth advantage applies directly to reading the KV cache as well.
+    </p>
+  </div>
+
+  <p>After that, this is what remains.</p>
+  <ul>
+    <li><b>Small ops, 4.2 ms</b> (RMSNorm, RoPE, SiLU, residuals). A fixed cost that doesn't depend on context length.
+        Once attention is dealt with, this becomes about 20% of the total</li>
+    <li><b>Run real model weights through it.</b> Right now I'm testing with random ternary values,
+        so the next step is to ternarize the real SmolLM2-135M and pass it through the same circuit</li>
+    <li><b>Redo the CPU baseline.</b> The 2.8 tok/s used for comparison comes from a naive loop,
+        so it isn't fair until I re-measure with a practical implementation like llama.cpp</li>
+  </ul>
+</section>
+
+<footer>
+  PYNQ-Z1 / XC7Z020-1CLG400C @ 142.86 MHz · Vivado 2024.1 (Docker + Rosetta 2) · PYNQ 3.1.1<br>
+  All numbers are measured on the real board (fastest of 5 runs × 32 MB). Everything not marked as an estimate is measured.<br>
+  Previous entries: <a href="02-two-ceilings.html">Two Ceilings (Stage 2)</a>
+  / <a href="01-cpu-to-fabric.html">From CPU to Fabric (the starting point, for FPGA beginners)</a>
+</footer>
+
+</div>
+<!-- nav -->
+<nav class="jnav foot" aria-label="Journal navigation">
+  <a href="../index.html">Journal index</a>
+  <a href="02-two-ceilings.html" rel="prev">← Previous: Two Ceilings</a>
+  <a href="04-reaching-the-wall.html" rel="next">Next: Reaching the Wall →</a>
+  <a class="lang" href="../ja/03-the-wall-does-not-move.html" hreflang="ja" lang="ja">日本語</a>
+</nav>
+<!-- /nav -->
+</body>
+</html>

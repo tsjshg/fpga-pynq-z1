@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>通しで動いた</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=M+PLUS+1+Code:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --paper:#F4F6F7;
+    --card:#FFFFFF;
+    --ink:#1A2027;
+    --ink-2:#5C666F;
+    --ink-3:#8B959D;
+    --rule:#D9DFE3;
+    --rule-2:#EAEEF0;
+    --path:#1F5FA9;      /* 道幅・DMA・渡し方 */
+    --path-soft:#E4EDF7;
+    --ddr:#C0701A;       /* DDR・メモリ */
+    --ddr-soft:#F9EEE1;
+    --tri:#136B57;       /* 三値・行列積 */
+    --tri-soft:#DFF0EA;
+    --attn:#6B4FA0;      /* attention */
+    --attn-soft:#EDE7F6;
+    --cpu:#77818A;       /* CPU の小物 */
+    --onfill:#FFFFFF;    /* 塗った棒の上の文字 */
+    --wrong:#A33A3A;
+    --wrong-soft:#F7E9E9;
+    --serif:"Shippori Mincho B1",'Hiragino Mincho ProN',"Yu Mincho",serif;
+    --sans:"Zen Kaku Gothic New",'Hiragino Sans',"Yu Gothic",system-ui,sans-serif;
+    --mono:"M PLUS 1 Code",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+      --rule:#2E363D; --rule-2:#232A30;
+      --path:#6FA8E8; --path-soft:#1C2A3A;
+      --ddr:#E0A05B;  --ddr-soft:#332617;
+      --tri:#5CC4A7;  --tri-soft:#12302A;
+      --attn:#B49BE8; --attn-soft:#261E3A;
+      --cpu:#8F9AA3; --onfill:#0F1418;
+      --wrong:#DF8C8C; --wrong-soft:#33201F;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+    --rule:#2E363D; --rule-2:#232A30;
+    --path:#6FA8E8; --path-soft:#1C2A3A;
+    --ddr:#E0A05B;  --ddr-soft:#332617;
+    --tri:#5CC4A7;  --tri-soft:#12302A;
+    --attn:#B49BE8; --attn-soft:#261E3A;
+    --cpu:#8F9AA3; --onfill:#0F1418;
+    --wrong:#DF8C8C; --wrong-soft:#33201F;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--paper); color:var(--ink); font-family:var(--sans);
+    font-size:16px; line-height:1.9; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 96px;}
+  @media (min-width:600px){ .wrap{padding:0 24px 96px;} }
+
+  header{padding:64px 0 40px;border-bottom:1px solid var(--rule);}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+    color:var(--ink-3);text-transform:uppercase;margin-bottom:20px;
+  }
+  h1{
+    font-family:var(--serif);font-weight:700;
+    font-size:clamp(38px,7vw,58px);line-height:1.25;
+    margin:0 0 20px;text-wrap:balance;letter-spacing:.01em;
+  }
+  .standfirst{font-size:17px;color:var(--ink-2);margin:0;max-width:60ch;}
+
+  /* ボードが実際に返した文章 */
+  .run{
+    margin:32px 0 0;background:var(--card);border:1px solid var(--rule);border-radius:3px;
+    font-family:var(--mono);font-size:14px;line-height:1.8;overflow-x:auto;
+  }
+  .run .bar{
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:8px 16px;border-bottom:1px solid var(--rule-2);font-size:11px;letter-spacing:.06em;color:var(--ink-3);
+  }
+  .run .body{padding:16px 16px 18px;}
+  .run .cmd{color:var(--ink-3);}
+  .run .in{color:var(--ink-2);}
+  .run .out{color:var(--ink);font-weight:700;}
+  .run .stat{margin-top:12px;color:var(--ink-3);font-size:12.5px;}
+  .run .stat b{color:var(--path);font-weight:700;}
+
+  section{margin-top:60px;}
+  h2{
+    font-family:var(--serif);font-weight:700;font-size:clamp(21px,4.4vw,26px);line-height:1.5;
+    margin:0 0 8px;display:flex;gap:16px;align-items:baseline;text-wrap:balance;
+  }
+  h2 .n{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--path);flex:none;padding-top:2px;}
+  h2 + .sub{
+    font-family:var(--mono);font-size:12px;color:var(--ink-3);
+    margin:0 0 24px 39px;letter-spacing:.04em;
+  }
+  p{margin:0 0 18px;}
+
+  figure{
+    margin:34px 0;background:var(--card);border:1px solid var(--rule);
+    border-radius:3px;padding:22px 16px 16px;
+  }
+  @media (min-width:600px){ figure{padding:26px 22px 18px;} }
+  .fig-scroll{overflow-x:auto;}
+  figure svg{display:block;width:100%;min-width:560px;height:auto;}
+  figcaption{
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--rule-2);
+    font-size:13px;line-height:1.75;color:var(--ink-2);
+  }
+  figcaption b{color:var(--ink);font-weight:700;}
+
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .tbl-scroll{overflow-x:auto;margin:26px 0;}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:500px;}
+  th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--rule-2);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule);
+  }
+  tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  tbody td:first-child{font-family:var(--sans);}
+  tbody td.t{font-family:var(--sans);text-align:left;color:var(--ink-2);font-size:13px;}
+  tr.hit td{background:var(--path-soft);}
+  tr.hit td strong{color:var(--path);}
+  tr.bad td{background:var(--wrong-soft);}
+  tr.bad td strong{color:var(--wrong);}
+
+  .callout{
+    border-left:3px solid var(--path);background:var(--path-soft);
+    padding:18px 20px;margin:28px 0;border-radius:0 3px 3px 0;
+  }
+  .callout p:last-child,.callout ul:last-child{margin-bottom:0;}
+  .callout .label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:var(--path);display:block;margin-bottom:8px;
+  }
+  .callout.fix{border-left-color:var(--wrong);background:var(--wrong-soft);}
+  .callout.fix .label{color:var(--wrong);}
+  .callout.win{border-left-color:var(--tri);background:var(--tri-soft);}
+  .callout.win .label{color:var(--tri);}
+
+  .keyline{
+    font-family:var(--serif);font-size:clamp(19px,3.6vw,22px);line-height:1.7;margin:34px 0;padding:22px 0;
+    border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);text-wrap:balance;
+  }
+  .keyline .num{font-size:1.18em;}
+
+  ul{margin:0 0 18px;padding-left:1.3em;}
+  li{margin-bottom:10px;}
+  code{font-family:var(--mono);font-size:.9em;background:var(--rule-2);padding:1px 5px;border-radius:3px;}
+  a{color:var(--path);text-underline-offset:2px;}
+  a:focus-visible{outline:2px solid var(--attn);outline-offset:3px;}
+
+  footer{margin-top:72px;padding-top:26px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3);}
+</style>
+<!-- nav -->
+<style>
+  body{margin:0}
+  img{max-width:100%}
+  .jnav{max-width:760px;margin:0 auto;padding:14px 16px 0;display:flex;flex-wrap:wrap;
+        gap:4px 18px;font-size:12.5px;line-height:1.7;opacity:.8}
+  .jnav.foot{padding:0 16px 40px}
+  .jnav a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
+  .jnav a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  .jnav .lang{margin-left:auto}
+  @media (min-width:600px){ .jnav{padding:14px 24px 0} .jnav.foot{padding:0 24px 40px} }
+</style>
+<!-- /nav -->
+</head>
+<body>
+<!-- nav -->
+<nav class="jnav" aria-label="開発記録のナビゲーション">
+  <a href="../index.html">開発記録の目次</a>
+  <a href="04-reaching-the-wall.html" rel="prev">← 前: 壁に届いた</a>
+  <a class="lang" href="../en/05-end-to-end.html" hreflang="en" lang="en">English</a>
+</nav>
+<!-- /nav -->
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">PYNQ-Z1 · 段階6 → 11 · 2026-09-28</div>
+  <h1>通しで動いた</h1>
+  <p class="standfirst">
+    前の資料の最後に「言えないこと」を 3 つ書きました。
+    <b>通しで 1 トークンも生成していない</b>、<b>流しているのはランダムな数値</b>、
+    <b>指数表の温度は仮の値</b>。この資料はその 3 つを片付けた記録です。
+  </p>
+  <p class="standfirst" style="margin-top:14px">
+    いまは文章を渡すと、ボードが 1 トークンずつ計算して続きを返します。
+    行列積と attention は自作の回路、残りは CPU。
+    <b>Mac で同じ計算をさせると、logits が最後のビットまで一致します。</b>
+  </p>
+
+  <div class="run" role="group" aria-label="ボード上での実行例">
+    <div class="bar"><span>PYNQ-Z1 · bitnet_b1_58-large（0.7B・三値）</span><span>実機の出力そのまま</span></div>
+    <div class="body">
+      <div class="cmd">$ python3 bitnet_run.py gen "The capital of France is" 24</div>
+      <div><span class="in">The capital of France is</span> <span class="out">the city of Paris. The city has been the home of many people, from the ancient Greeks and the Romans</span></div>
+      <div class="stat">1 トークン <b>125.9 ms → 7.94 tok/s</b>（文脈 30 前後）・文脈 512 で <b>136〜138 ms → 7.3 tok/s</b></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">01</span><span>本物の重みを丸めたら壊れた</span></h2>
+  <p class="sub">stage 6 · the circuit was right, the model was not</p>
+
+  <p>
+    最初にやったのは、これまで使ってきた SmolLM2-135M の本物の重みを三値
+    （−1 / 0 / +1）に丸めて回路に流すことでした。回路の答えは
+    <b>239,232 語すべて numpy と一致</b>しました。回路は正しく動いています。
+  </p>
+  <p>ところがモデルとしては完全に壊れていました。</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>SmolLM2-135M</th><th>perplexity</th><th>The capital of France is →</th></tr></thead>
+    <tbody>
+      <tr><td>そのまま（fp32）</td><td>18.31</td><td class="t">まともな英語</td></tr>
+      <tr class="bad"><td><strong>三値に丸めた</strong></td><td><strong>9,176,689</strong></td><td class="t">makers emergmakermakermaker…</td></tr>
+      <tr><td>参考：語彙 49,152 から無作為に選ぶ</td><td>49,152</td><td class="t">—</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    <b>でたらめに選ぶより 187 倍悪い</b>。丸め方を行ごとに変えてもほとんど変わりません。
+    重み 1 個あたりの誤差が 5〜6 割あり、それが 30 層ぶん積み重なるからです。
+  </p>
+  <div class="callout">
+    <span class="label">分かったこと</span>
+    <p>
+      BitNet b1.58 は<b>三値のまま学習したモデル</b>の名前です。
+      普通に学習した重みを後から三値に丸めたものとは別物でした。
+      回路の正しさとは関係のない話ですが、<b>載せるモデルを選び直す必要がある</b>ということです。
+    </p>
+  </div>
+
+  <p>
+    この段階ではもう一つ見つかりました。回路は道幅の <span class="num">100.0%</span> で動いているのに、
+    1 トークンの時間の <b>83% が DMA の呼び出しの固定費</b>でした。
+    当時の形式は「1 転送に x（入力ベクトル）が 1 つ」なので、行列が変わるたびに転送を切るしかなく、
+    1 トークンで <span class="num">181</span> 回も呼んでいたからです。これが 3 節の宿題になります。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">02</span><span>三値で学習したモデルに乗り換える</span></h2>
+  <p class="sub">stage 6.5 · the only one that fits in 512 MB</p>
+
+  <p>
+    三値で学習済みで、このボードの 512 MB に載るものを探すと、候補は
+    <code>1bitLLM/bitnet_b1_58-large</code>（0.7B）だけでした。
+    numpy で回路と同じ量子化手順を書いて確かめると、
+    <b>perplexity 17.90</b>。三値のまま、SmolLM2 の fp32（18.31）より良い値です。
+  </p>
+  <p>ただし形が違うので、回路もデータの詰め方も作り直しになります。</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th></th><th>SmolLM2-135M</th><th>bitnet_b1_58-large</th><th>回路への影響</th></tr></thead>
+    <tbody>
+      <tr><td>hidden / FFN / 層</td><td>576 / 1536 / 30</td><td>1536 / 4096 / 24</td><td class="t">重みが 6 倍（三値で 136 MB）</td></tr>
+      <tr><td>head_dim</td><td>64</td><td>96</td><td class="t">attention の回路を作り直し</td></tr>
+      <tr><td>q : kv ヘッド</td><td>9 : 3</td><td>16 : 16</td><td class="t">GQA が無い。1 バイトの再利用が 3 回→1 回</td></tr>
+      <tr><td>lm_head</td><td>—</td><td>fp16（三値ではない）</td><td class="t">そのままでは 98 MB を毎トークン読む</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    lm_head（最後に語彙 32,002 個の点数を出す行列）はメモリの都合で<b>三値に落としました</b>。
+    INT8 なら品質はそのまま（17.90 → 17.89）ですが、DMA で読める領域（CMA）に収まりません。
+    三値にすると <b>perplexity は 17.90 → 35.59 と倍になります</b>が、文章は壊れません。
+    これはこの構成で払っている品質の代償で、最後の節でもう一度触れます。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">03</span><span>渡し方を直す</span></h2>
+  <p class="sub">stages 7 &amp; 8 · a header, then a variable row length</p>
+
+  <p>
+    181 回の呼び出しをどう減らすか。回路は速いので、<b>回路への渡し方</b>を変えます。
+    ストリームの頭に小さな見出しを付けて「この後 R 行続く」と書けば、
+    x が変わっても転送を切らずに次の組へ進めます。次に、見出しに<b>1 行の長さ</b>も書けるようにしました。
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 330" role="img" aria-label="ストリーム形式の変遷。段階6は x と行の組が1転送に1つだけで、1トークンに181転送。段階7は見出しRを付けて組をいくつでもつなげられるようにし、1トークン12転送、HP2本なら6往復。段階8は見出しに1行の長さBPRも入れ、入力次元に合わせて行を切れるようにした。組は387から97に、詰め物は20%から1.3%に、重みは169.7から141.3メビバイトに減り、1トークンの行列積は76.87ミリ秒になった。">
+      <text x="40" y="24" font-size="13" font-weight="700" fill="currentColor">DMA 1 回ぶんのストリーム</text>
+
+      <!-- 段階6 -->
+      <text x="40" y="60" font-size="12" font-weight="700" fill="currentColor">段階6</text>
+      <text x="40" y="76" font-size="10.5" fill="currentColor" opacity=".6">x は 1 つだけ</text>
+      <rect x="130" y="46" width="70" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+      <text x="165" y="67" text-anchor="middle" font-size="10.5" fill="var(--path)">x 640 B</text>
+      <rect x="204" y="46" width="200" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+      <text x="304" y="67" text-anchor="middle" font-size="10.5" fill="var(--tri)">行 × R（1 行 640 重み）</text>
+      <text x="414" y="67" font-size="10.5" fill="currentColor" opacity=".55">■ TLAST</text>
+      <text x="720" y="60" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">181 転送</text>
+      <text x="720" y="76" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">固定費が 83%</text>
+
+      <!-- 段階7 -->
+      <text x="40" y="138" font-size="12" font-weight="700" fill="currentColor">段階7</text>
+      <text x="40" y="154" font-size="10.5" fill="currentColor" opacity=".6">見出し R</text>
+      <g>
+        <rect x="130" y="124" width="22" height="34" rx="2" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="141" y="145" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ddr)">R</text>
+        <rect x="154" y="124" width="46" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+        <text x="177" y="145" text-anchor="middle" font-size="10" fill="var(--path)">x</text>
+        <rect x="202" y="124" width="92" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="248" y="145" text-anchor="middle" font-size="10" fill="var(--tri)">行 × R</text>
+        <rect x="298" y="124" width="22" height="34" rx="2" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="309" y="145" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ddr)">R</text>
+        <rect x="322" y="124" width="46" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+        <text x="345" y="145" text-anchor="middle" font-size="10" fill="var(--path)">x</text>
+        <rect x="370" y="124" width="92" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="416" y="145" text-anchor="middle" font-size="10" fill="var(--tri)">行 × R</text>
+        <text x="472" y="145" font-size="11" fill="currentColor" opacity=".6">… ■</text>
+      </g>
+      <text x="720" y="138" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="currentColor">12 転送</text>
+      <text x="720" y="154" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">HP 2 本で 6 往復</text>
+
+      <!-- 段階8 -->
+      <text x="40" y="216" font-size="12" font-weight="700" fill="var(--path)">段階8</text>
+      <text x="40" y="232" font-size="10.5" fill="currentColor" opacity=".6">見出し R, BPR</text>
+      <g>
+        <rect x="130" y="202" width="40" height="34" rx="2" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="150" y="223" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ddr)">R,BPR</text>
+        <rect x="172" y="202" width="70" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+        <text x="207" y="223" text-anchor="middle" font-size="10" fill="var(--path)">x 1560 B</text>
+        <rect x="244" y="202" width="118" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="303" y="223" text-anchor="middle" font-size="10" fill="var(--tri)">行 × R（1560 重み）</text>
+        <rect x="366" y="202" width="40" height="34" rx="2" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="386" y="223" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ddr)">R,BPR</text>
+        <rect x="408" y="202" width="104" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+        <text x="460" y="223" text-anchor="middle" font-size="10" fill="var(--path)">x 4120 B</text>
+        <rect x="514" y="202" width="80" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="554" y="223" text-anchor="middle" font-size="10" fill="var(--tri)">行 × R</text>
+        <text x="600" y="223" font-size="11" fill="currentColor" opacity=".6">… ■</text>
+      </g>
+      <text x="720" y="216" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">5 往復</text>
+      <text x="720" y="232" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">76.87 ms</text>
+
+      <line x1="40" y1="262" x2="720" y2="262" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="286" font-size="12" fill="currentColor" opacity=".85">
+        段階7 は行長 640 固定。入力 1536 を 640 × 3 = 1920 に詰め物をして割り、部分和を CPU で足していた
+      </text>
+      <text x="40" y="308" font-size="12" fill="currentColor" opacity=".85">
+        段階8 は入力次元に合わせて 1560・4120 で切れる。<tspan font-weight="700" fill="var(--path)">組 387 → 97、詰め物 20% → 1.3%、重み 169.7 → 141.3 MiB</tspan>
+      </text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>図1 ／ 回路の外側を変えた。</b>
+      計算の部分（三値の加算木）は段階4 のままで、変えたのは入口の状態機械だけです。
+      LUT は <span class="num">9,557 → 9,720</span>、ほぼ増えていません。
+      それでも 1 トークンの行列積は、HP 2 本で <b>96.51 ms → 76.87 ms</b>、
+      DDR の壁の <b>95.9%</b> まで来ました。
+    </figcaption>
+  </figure>
+
+  <p>
+    行長を可変にした効果は 3 つ重なりました。詰め物が減って読む量が 17% 減り、
+    組の切れ目が 4 分の 1 になり、CPU で部分和を足す後始末が消えました。
+    <b>そしてもう一つ、重みが 141.3 MiB に縮んだおかげで、後で attention と同じチップに同居できるようになります</b>（5 節）。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">04</span><span>attention を作り直す</span></h2>
+  <p class="sub">stages 7c &amp; 9 · head_dim 96, no GQA, and a multiplier</p>
+
+  <div class="callout fix">
+    <span class="label">作る前に、比較相手を測り直した</span>
+    <p>
+      bitnet-large の attention を CPU で測ったら <span class="num">96.22 ms</span>（文脈 512）でした。
+      それまで使っていた換算値は <span class="num">180 ms</span>。
+      古いベンチを <b>NEON 無効（<code>-O2</code>）で焼いていた</b>ためで、前の資料も訂正しました。
+      これで行列積（96.51 ms）と attention（96.22 ms）が<b>ほぼ半々</b>だと分かりました。
+    </p>
+  </div>
+
+  <p>
+    段階5b の回路は head_dim 64・GQA 3:1 専用なので使えません。
+    作り直す前に numpy でもう一つ確かめたことがあります。
+    段階5b はスコアを <code>s &gt;&gt; 8</code> という固定のシフトで 8 bit にしていましたが、
+    これは q と K の量子化の尺度を無視しています。本物のモデルに当てると
+    <b>指数の温度が層・ヘッドごとにずれます</b>。
+  </p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>attention の作り（lm_head は三値）</th><th>perplexity</th></tr></thead>
+    <tbody>
+      <tr><td>float の本来の softmax</td><td>35.56</td></tr>
+      <tr class="bad"><td><strong>段階5b のまま（固定シフト）</strong></td><td><strong>58.25</strong></td></tr>
+      <tr class="hit"><td><strong>見出しに倍率 m を載せる（掛け算器 1 個）</strong></td><td><strong>35.90</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    <code>m = TAU · s<sub>q</sub> · s<sub>k</sub> / √96</code> を 2<sup>24</sup> 倍した整数を見出しに書き、
+    スコアに掛けてから指数表を引きます。実際の値の範囲は <span class="num">10,818〜79,505</span> で、
+    16 bit には入らず、DSP の 18 bit 入力にちょうど収まりました。
+    これで前の資料の「指数表の温度は仮の値」が片付きました。
+  </p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>段階9 の attention 回路（HP 2 本）</th><th>値</th></tr></thead>
+    <tbody>
+      <tr><td>照合</td><td>37,248 語すべて一致</td></tr>
+      <tr><td>文脈 512・1 トークン（24 層 × 16 ヘッド）</td><td>20.22 ms</td></tr>
+      <tr><td>読み出し</td><td>1.872 GB/s（DDR の壁の 93.2%）</td></tr>
+      <tr><td>1 バイトあたり</td><td>1.00 MAC（GQA が無いので）</td></tr>
+      <tr><td>掛け算器</td><td>17 個（段階5b は 48 個）</td></tr>
+      <tr class="hit"><td><strong>CPU（NEON 有効）との比</strong></td><td><strong>4.8 倍</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    142.86 MHz では 2 回ともタイミング違反になりました。違反したのは自作の回路ではなく
+    <b>AXI DMA の中の転送長カウンタ</b>です。<b>125 MHz に下げました。</b>
+    2 本ぶんの道幅は 2.000 GB/s で、DDR の壁 2.009 とほぼ同じです。
+    帯域で頭打ちの回路なので、クロックを下げても損はほとんどありません。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">05</span><span>1 枚のチップで交互に動かす</span></h2>
+  <p class="sub">stage 10 · four DMAs, no switch</p>
+
+  <p>
+    行列積の回路と attention の回路を、同じビットストリームに載せました。
+    1 トークンの中で両者は必ず交互に動きます。
+    だから<b>切り替え回路は作らず、DMA を 4 台置いて、使うほうを叩くだけ</b>にしました。
+    同時には動かないので、DDR の取り合いも起きません。
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 318" role="img" aria-label="1層の処理の流れ。CPUで正規化と量子化、PLで行列積qkv、CPUでRoPEとq・K・VのINT8化、PLでattention、CPUで割り算と正規化と量子化、PLで行列積o、CPUで残差と正規化と量子化、PLで行列積gate/up、CPUでsiluと正規化と量子化、PLで行列積down、CPUで残差を足して次の層へ。PLへの転送は1層5回で、24層とlm_headを合わせて1トークン121回。行列積はDMA0と1の単純転送、attentionはDMA2と3のSG転送を使う。">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <text x="40" y="24" font-size="13" font-weight="700" fill="currentColor">1 層の流れ（× 24 層、最後に lm_head）</text>
+
+      <!-- 1 段目 -->
+      <g font-size="10.5">
+        <rect x="40" y="46" width="96" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="88" y="68" text-anchor="middle" fill="var(--cpu)">正規化</text>
+        <text x="88" y="84" text-anchor="middle" fill="var(--cpu)">INT8 に</text>
+        <line x1="138" y1="72" x2="156" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="158" y="46" width="96" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.6"/>
+        <text x="206" y="68" text-anchor="middle" font-weight="700" fill="var(--tri)">行列積</text>
+        <text x="206" y="84" text-anchor="middle" fill="var(--tri)">q・k・v</text>
+        <line x1="256" y1="72" x2="274" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="276" y="46" width="110" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="331" y="68" text-anchor="middle" fill="var(--cpu)">RoPE</text>
+        <text x="331" y="84" text-anchor="middle" fill="var(--cpu)">q・K・V を INT8 に</text>
+        <line x1="388" y1="72" x2="406" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="408" y="46" width="104" height="52" rx="3" fill="var(--attn)" fill-opacity=".2" stroke="var(--attn)" stroke-width="1.6"/>
+        <text x="460" y="68" text-anchor="middle" font-weight="700" fill="var(--attn)">attention</text>
+        <text x="460" y="84" text-anchor="middle" fill="var(--attn)">16 ヘッド</text>
+        <line x1="514" y1="72" x2="532" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="534" y="46" width="96" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="582" y="68" text-anchor="middle" fill="var(--cpu)">÷ 分母・正規化</text>
+        <text x="582" y="84" text-anchor="middle" fill="var(--cpu)">INT8 に</text>
+        <line x1="632" y1="72" x2="650" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="652" y="46" width="68" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.6"/>
+        <text x="686" y="68" text-anchor="middle" font-weight="700" fill="var(--tri)">行列積</text>
+        <text x="686" y="84" text-anchor="middle" fill="var(--tri)">o</text>
+      </g>
+      <path d="M686,100 L686,120 L88,120 L88,136" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+
+      <!-- 2 段目 -->
+      <g font-size="10.5">
+        <rect x="40" y="140" width="96" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="88" y="162" text-anchor="middle" fill="var(--cpu)">残差・正規化</text>
+        <text x="88" y="178" text-anchor="middle" fill="var(--cpu)">INT8 に</text>
+        <line x1="138" y1="166" x2="156" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="158" y="140" width="96" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.6"/>
+        <text x="206" y="162" text-anchor="middle" font-weight="700" fill="var(--tri)">行列積</text>
+        <text x="206" y="178" text-anchor="middle" fill="var(--tri)">gate・up</text>
+        <line x1="256" y1="166" x2="274" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="276" y="140" width="110" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="331" y="162" text-anchor="middle" fill="var(--cpu)">silu × up・正規化</text>
+        <text x="331" y="178" text-anchor="middle" fill="var(--cpu)">INT8 に</text>
+        <line x1="388" y1="166" x2="406" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="408" y="140" width="104" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.6"/>
+        <text x="460" y="162" text-anchor="middle" font-weight="700" fill="var(--tri)">行列積</text>
+        <text x="460" y="178" text-anchor="middle" fill="var(--tri)">down</text>
+        <line x1="514" y1="166" x2="532" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="534" y="140" width="96" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="582" y="162" text-anchor="middle" fill="var(--cpu)">残差</text>
+        <text x="582" y="178" text-anchor="middle" fill="var(--cpu)">次の層の正規化</text>
+        <line x1="632" y1="166" x2="650" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <text x="656" y="170" font-size="11" font-weight="700" fill="currentColor">次の層</text>
+      </g>
+
+      <line x1="40" y1="216" x2="720" y2="216" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <g font-size="11.5">
+        <rect x="40" y="232" width="15" height="11" fill="var(--tri)" fill-opacity=".35" stroke="var(--tri)"/>
+        <text x="62" y="242" fill="currentColor">行列積 ── DMA 0・1（単純転送）→ 三値の回路 × 2</text>
+        <rect x="40" y="254" width="15" height="11" fill="var(--attn)" fill-opacity=".35" stroke="var(--attn)"/>
+        <text x="62" y="264" fill="currentColor">attention ── DMA 2・3（SG 転送・6 節）→ attention の回路 × 2</text>
+        <rect x="40" y="276" width="15" height="11" fill="none" stroke="var(--cpu)" stroke-dasharray="3 2"/>
+        <text x="62" y="286" fill="currentColor">CPU ── 浮動小数の小物（C + NEON・7 節）</text>
+      </g>
+      <text x="720" y="264" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">1 層 5 転送</text>
+      <text x="720" y="286" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">1 トークン 121 転送</text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>図2 ／ PL と CPU が 10 回ずつ入れ替わる。</b>
+      色のついた箱が回路、点線の箱が CPU です。どの箱も前の箱の結果を待つので、
+      <b>転送をまとめることはできません</b>。1 トークンに 121 回、回路と CPU の間を往復します。
+      段階10 ではまだこの流れを動かしておらず、<b>記録した 1 トークンぶんを再生して</b>
+      PL だけで <span class="num">98.57 ms</span>（450,178 語一致）を測りました。
+    </figcaption>
+  </figure>
+
+  <p>
+    同居の代償は <b>1.4%</b> でした（別々のビットストリームなら 107.8 ms、同居で 109.3 ms の見込み）。
+    その差のほぼ全部は、DMA の転送長を 8 MiB 以下に切ったぶん往復が増えたことによるものです。
+    資源は LUT 34%。チップにはまだ 3 分の 2 が空いています。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">06</span><span>伸びる KV を動かさずに流す</span></h2>
+  <p class="sub">stage 11 · scatter-gather instead of copying</p>
+
+  <p>
+    通しで動かすには、1 トークンごとに K と V を 1 行ずつ積み増す必要があります（KV キャッシュ）。
+    ここで attention の回路の入力形式が問題になりました。
+  </p>
+  <p>
+    回路が受け取るのは <code>[見出し][q][K を T 行][V を T 行]</code> を 1 ヘッドずつつなげたストリームです。
+    T が 1 増えると、<b>V の開始位置と、後ろのヘッド全部の位置がずれます</b>。
+    単純な DMA は「連続した 1 領域」しか読めないので、毎トークン KV を丸ごと詰め直す（T=512 で 36 MB）か、
+    ヘッドごとに転送を切る（1 トークン 384 回）しかありません。
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 372" role="img" aria-label="KVキャッシュの置き方の比較。単純転送では1ヘッドの見出し・q・K・Vを隙間なく並べる必要があるため、新しいK行を入れるとVと後ろのヘッドがすべてずれる。SG転送では各ヘッドに文脈512行ぶんの固定の置き場を用意し、Kの置き場とVの置き場を分けておく。記述子AがKの先頭T行を、記述子BがVの先頭T行を指し、8ヘッドぶん16個の記述子が1本のストリームにつながる。毎トークン書き換えるのは記述子の長さ欄だけ。">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+        <marker id="a3r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--wrong)"/>
+        </marker>
+        <marker id="a3p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--path)"/>
+        </marker>
+      </defs>
+
+      <!-- 単純転送 -->
+      <text x="40" y="24" font-size="12.5" font-weight="700" fill="var(--wrong)">単純転送のまま（連続した 1 領域）</text>
+      <g font-size="10">
+        <rect x="40" y="40" width="28" height="32" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)"/>
+        <text x="54" y="60" text-anchor="middle" fill="var(--ddr)">見q</text>
+        <rect x="70" y="40" width="140" height="32" fill="var(--path)" fill-opacity=".15" stroke="var(--path)"/>
+        <text x="140" y="60" text-anchor="middle" fill="var(--path)">K 0 … T−1</text>
+        <rect x="212" y="40" width="140" height="32" fill="var(--attn)" fill-opacity=".15" stroke="var(--attn)"/>
+        <text x="282" y="60" text-anchor="middle" fill="var(--attn)">V 0 … T−1</text>
+        <rect x="356" y="40" width="28" height="32" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)"/>
+        <text x="370" y="60" text-anchor="middle" fill="var(--ddr)">見q</text>
+        <rect x="386" y="40" width="140" height="32" fill="var(--path)" fill-opacity=".15" stroke="var(--path)"/>
+        <text x="456" y="60" text-anchor="middle" fill="var(--path)">K</text>
+        <rect x="528" y="40" width="140" height="32" fill="var(--attn)" fill-opacity=".15" stroke="var(--attn)"/>
+        <text x="598" y="60" text-anchor="middle" fill="var(--attn)">V</text>
+        <text x="676" y="60" fill="currentColor" opacity=".6">…</text>
+      </g>
+      <line x1="211" y1="100" x2="211" y2="78" stroke="var(--wrong)" stroke-width="1.6" marker-end="url(#a3r)"/>
+      <text x="211" y="116" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--wrong)">新しい K 行はここ</text>
+      <path d="M216,84 L720,84" fill="none" stroke="var(--wrong)" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#a3r)"/>
+      <text x="468" y="104" text-anchor="middle" font-size="10.5" fill="var(--wrong)">ここから後ろが全部ずれる（毎トークン、KV 全体の半分を動かす）</text>
+
+      <line x1="40" y1="138" x2="720" y2="138" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- SG -->
+      <text x="40" y="164" font-size="12.5" font-weight="700" fill="var(--path)">SG 転送（記述子で綴じる）── 1 ヘッドの置き場は固定</text>
+      <g font-size="10">
+        <rect x="40" y="180" width="28" height="32" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)"/>
+        <text x="54" y="200" text-anchor="middle" fill="var(--ddr)">見q</text>
+        <rect x="70" y="180" width="310" height="32" fill="none" stroke="var(--path)"/>
+        <rect x="70" y="180" width="140" height="32" fill="var(--path)" fill-opacity=".2"/>
+        <text x="140" y="200" text-anchor="middle" fill="var(--path)">K 0 … T−1</text>
+        <rect x="210" y="180" width="8" height="32" fill="var(--path)" fill-opacity=".55"/>
+        <text x="300" y="200" text-anchor="middle" fill="currentColor" opacity=".5">空き（〜511）</text>
+        <rect x="384" y="180" width="310" height="32" fill="none" stroke="var(--attn)"/>
+        <rect x="384" y="180" width="140" height="32" fill="var(--attn)" fill-opacity=".2"/>
+        <text x="454" y="200" text-anchor="middle" fill="var(--attn)">V 0 … T−1</text>
+        <rect x="524" y="180" width="8" height="32" fill="var(--attn)" fill-opacity=".55"/>
+        <text x="614" y="200" text-anchor="middle" fill="currentColor" opacity=".5">空き（〜511）</text>
+      </g>
+      <text x="214" y="232" text-anchor="middle" font-size="10" fill="var(--path)">新しい行は末尾に書くだけ</text>
+      <text x="528" y="232" text-anchor="middle" font-size="10" fill="var(--attn)">同じく末尾に書くだけ</text>
+
+      <!-- 記述子 -->
+      <path d="M40,246 L40,256 L218,256 L218,246" fill="none" stroke="var(--path)" stroke-width="1.5"/>
+      <text x="129" y="274" text-anchor="middle" font-size="11" font-weight="700" fill="var(--path)">記述子 A</text>
+      <text x="129" y="290" text-anchor="middle" font-size="10" fill="var(--path)">104 + 96T バイト</text>
+      <path d="M384,246 L384,256 L532,256 L532,246" fill="none" stroke="var(--attn)" stroke-width="1.5"/>
+      <text x="458" y="274" text-anchor="middle" font-size="11" font-weight="700" fill="var(--attn)">記述子 B</text>
+      <text x="458" y="290" text-anchor="middle" font-size="10" fill="var(--attn)">96T バイト</text>
+      <path d="M170,280 C 260,300 330,300 404,282" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a3)" opacity=".7"/>
+
+      <g font-family="var(--mono)" font-size="10.5">
+        <text x="40" y="330" fill="currentColor">1 層の鎖:</text>
+        <text x="112" y="330" fill="var(--path)" font-weight="700">A₀</text>
+        <text x="134" y="330" fill="var(--attn)" font-weight="700">B₀</text>
+        <text x="156" y="330" fill="var(--path)" font-weight="700">A₁</text>
+        <text x="178" y="330" fill="var(--attn)" font-weight="700">B₁</text>
+        <text x="200" y="330" fill="currentColor" opacity=".6">…</text>
+        <text x="220" y="330" fill="var(--path)" font-weight="700">A₇</text>
+        <text x="242" y="330" fill="var(--attn)" font-weight="700">B₇</text>
+        <text x="272" y="330" fill="currentColor">→ 回路には 1 本のストリームに見える</text>
+      </g>
+      <text x="40" y="356" font-size="12" font-weight="700" fill="currentColor">毎トークン書き換えるのは長さ欄だけ。層ごとに TAILDESC を 1 回書けば走る</text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>図3 ／ データを動かさず、読む順番の表を書き換える。</b>
+      SG（scatter-gather）は、DMA が「どこから何バイト読むか」の表（記述子）を順にたどる機能です。
+      K と V を別々の場所に置いたまま、回路には 1 本のストリームとして届けられます。
+      <b>変えたのは DMA の設定 1 行だけで、attention の回路は 1 ビットも変えていません</b>。
+      費用は LUT +3,471（全体で 40%）でした。
+    </figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="label">もう一つの決めごと ── KV の尺度は固定にする</span>
+    <p>
+      段階9 までは、K と V を INT8 にする尺度を「全位置の最大値」から決めていました。
+      これは<b>まだ来ていない未来の K を見ています</b>。しかも T が伸びるたびに最大値が変わるので、
+      過去の INT8 を全部作り直すことになり、積み増しができません。
+    </p>
+    <p>
+      そこで<b>層・ヘッドごとに尺度を固定</b>しました。評価文とは別の文章 144 トークンを流して
+      max|K| と max|V| を測り、それを使い続けます。perplexity は
+      <span class="num">35.90 → 35.61</span> と、<b>固定したほうがむしろ良くなりました</b>。
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">07</span><span>Mac とボードで同じ答えを出す</span></h2>
+  <p class="sub">bit-identical logits on two machines</p>
+
+  <p>
+    通しで動かすと、確かめるべきものが増えます。
+    回路の答えが正しいかだけでなく、<b>CPU 側の浮動小数の計算まで含めて、1 トークン全体が正しいか</b>です。
+    そこで同じ計算を Mac でも走らせ、両方の logits（語彙 32,002 個ぶんの点数）を比べることにしました。
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 330" role="img" aria-label="照合のしくみ。真ん中に、MacとボードでまったくCPU側で共有するファイルがあり、骨組みのe2e_core.pyと浮動小数の小物のe2e_cpu.cが両方で同じように動く。左のMacでは回路の代わりに三値行列を整数で掛けるnumpyの裏方を使い、右のボードではDMAで回路を叩く裏方を使う。ボードは回路への呼び出しを全部記録し、Macがそれを整数で再計算して照合する。結果は、logitsが191トークンぶんビット単位で一致し、回路への呼び出し3509回、13055162語がすべて一致した。">
+      <defs>
+        <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <text x="130" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">Mac（M4）</text>
+      <text x="630" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">PYNQ-Z1</text>
+
+      <!-- 共有 -->
+      <rect x="250" y="44" width="260" height="120" rx="4" fill="var(--path)" fill-opacity=".08" stroke="var(--path)" stroke-width="1.6"/>
+      <text x="380" y="68" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--path)">両方で同じファイル</text>
+      <text x="380" y="96" text-anchor="middle" font-size="11" font-family="var(--mono)" fill="currentColor">e2e_core.py</text>
+      <text x="380" y="112" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">1 トークンの骨組み</text>
+      <text x="380" y="138" text-anchor="middle" font-size="11" font-family="var(--mono)" fill="currentColor">e2e_cpu.c</text>
+      <text x="380" y="154" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">正規化・RoPE・silu・量子化（NEON）</text>
+
+      <!-- 左 -->
+      <rect x="40" y="44" width="180" height="120" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="130" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">NumpyBackend</text>
+      <text x="130" y="96" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".8">三値の行列を</text>
+      <text x="130" y="112" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".8">整数のまま掛ける</text>
+      <text x="130" y="138" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">ボードと同じ .bin から</text>
+      <text x="130" y="152" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">復元（詰め方の検査も兼ねる）</text>
+      <line x1="222" y1="104" x2="246" y2="104" stroke="currentColor" stroke-width="1.3" marker-start="url(#a4)" marker-end="url(#a4)"/>
+
+      <!-- 右 -->
+      <rect x="540" y="44" width="180" height="120" rx="4" fill="var(--tri)" fill-opacity=".1" stroke="var(--tri)" stroke-width="1.4"/>
+      <text x="630" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="var(--tri)">FpgaBackend</text>
+      <text x="630" y="96" text-anchor="middle" font-size="10.5" fill="var(--tri)">DMA 4 台で</text>
+      <text x="630" y="112" text-anchor="middle" font-size="10.5" fill="var(--tri)">自作の回路を叩く</text>
+      <text x="630" y="138" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">KV は CMA に INT8 で常駐</text>
+      <text x="630" y="152" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">179.1 MiB</text>
+      <line x1="514" y1="104" x2="538" y2="104" stroke="currentColor" stroke-width="1.3" marker-start="url(#a4)" marker-end="url(#a4)"/>
+
+      <!-- 照合 1 -->
+      <path d="M630,168 L630,196 L130,196 L130,168" fill="none" stroke="var(--path)" stroke-width="1.5" marker-end="url(#a4)"/>
+      <text x="380" y="190" text-anchor="middle" font-size="10.5" fill="var(--path)">回路への呼び出しを全部記録して送る → Mac が整数で再計算</text>
+
+      <line x1="40" y1="222" x2="720" y2="222" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="248" font-size="12.5" font-weight="700" fill="currentColor">結果</text>
+      <g font-size="12">
+        <text x="40" y="274" fill="currentColor">logits（perplexity 130 トークン ＋ 生成 2 本）</text>
+        <text x="720" y="274" text-anchor="end" font-family="var(--mono)" font-weight="700" fill="var(--tri)">191 トークン すべてビット一致</text>
+        <text x="40" y="298" fill="currentColor">回路への呼び出し（生成 1 本・KV も記録から積み直す）</text>
+        <text x="720" y="298" text-anchor="end" font-family="var(--mono)" font-weight="700" fill="var(--tri)">3,509 回・13,055,162 語 一致</text>
+        <text x="40" y="322" fill="currentColor">perplexity</text>
+        <text x="720" y="322" text-anchor="end" font-family="var(--mono)" font-weight="700" fill="var(--tri)">35.690103 ＝ 35.690103</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>図4 ／ 違うのは「回路の代役」だけ。</b>
+      Mac とボードは、回路の部分だけを差し替えて同じコードを走らせています。
+      回路の答えは整数なので一致するのが当然ですが、<b>浮動小数の部分まで最後のビットが揃った</b>ことで、
+      1 トークン全体を丸ごと比べられるようになりました。
+      どこか 1 か所でもずれていれば、logits のどこかに必ず出ます。
+    </figcaption>
+  </figure>
+
+  <p>
+    Mac（Apple M4）もボード（Cortex-A9）も ARM なので、<code>arm_neon.h</code> の同じ命令で書けます。
+    それでも、何もしなければ結果は揃いません。揃えるために決めたことはこれです。
+  </p>
+  <ul>
+    <li><b>掛け算と足し算を融合させない</b>（<code>-ffp-contract=off</code>）。Mac の clang は既定で FMA にまとめてしまう</li>
+    <li><b>和の順序を固定する</b>（4 レーンで足して、最後に (0+1)+(2+3)）。fast-math は使わない</li>
+    <li><b>exp と丸めを自前で書く</b>。<code>expf</code> や <code>rintf</code> は libm ごとに最下位ビットが違いうる</li>
+    <li><b>逆数の補正に <code>vrecpsq_f32</code> を使わない</b>。同じ名前でも AArch64 では融合演算になり、ARMv7 と結果が変わる</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">08</span><span>遅かったのは Python だった</span></h2>
+  <p class="sub">the hardware was fine all along</p>
+
+  <p>
+    最初に通しで動いたとき、1 トークンは <span class="num">225.6 ms</span> かかりました。
+    段階10 の見込み（109 ms）の倍です。原因を一つずつ潰した記録がこの表です。
+  </p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>何を変えたか</th><th>1 トークン</th><th>効いた理由</th></tr></thead>
+    <tbody>
+      <tr><td>（参考）CPU の小物を numpy で</td><td>小物だけで 305 ms</td><td class="t">ボードの numpy は NEON を使わず、1 要素 20〜100 ns</td></tr>
+      <tr><td>（参考）素直な C に</td><td>小物だけで 55 ms</td><td class="t"><code>rintf</code> が関数呼び出し、浮動小数の比較で流れが止まる</td></tr>
+      <tr><td>（参考）C + NEON に</td><td>小物だけで 25 ms</td><td class="t">丸めは小細工、exp は多項式、割り算は逆数の推定</td></tr>
+      <tr><td>通しの初版</td><td>225.6 ms</td><td class="t">—</td></tr>
+      <tr><td>PYNQ の配列を素の numpy 配列に</td><td>164〜172 ms</td><td class="t">PYNQ の配列は切り出すたびに約 100 µs かかっていた</td></tr>
+      <tr class="hit"><td><strong>DMA の操作を C に</strong></td><td><strong>125.9 ms</strong></td><td class="t">Python からのレジスタ操作は 1 回 6〜14 µs。1 転送で数百 µs になっていた</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout fix">
+    <span class="label">途中で一度、ハードを疑って外した</span>
+    <p>
+      DMA の 1 転送が理論値より 150 µs ほど長くかかる、という測定が出ました。
+      状態レジスタを読み続けると転送そのものが遅れるのだろうと考え、
+      「終わりそうな時刻までは時計だけ見て待つ」版を作りましたが、<b>何も変わりませんでした</b>。
+    </p>
+    <p>
+      DMA の操作を C に移すと、転送は理論どおりの時間で終わりました。
+      <b>ハードは最初から正常で、遅れていたのは Python の側でした</b>。
+      ただ、「時計で待ってから 1 回だけ読む」実験で出た 250 µs の余分は、いまも説明がついていません。
+    </p>
+  </div>
+
+  <p>
+    段階6 でも「回路は道幅の 100% で動いているのに、呼び出しの固定費が 83%」という話がありました。
+    ここでも同じことが起きています。<b>回路を速くするのと同じくらい、回路への渡し方に手間がかかる</b>、
+    というのがこの段階でいちばん時間を使ったところです。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">09</span><span>文脈が伸びると何が伸びるか</span></h2>
+  <p class="sub">only attention grows with T</p>
+
+  <p>
+    文脈 512（ボードの KV の置き場の上限）まで生成を続け、
+    部品ごとの時間を 1 トークンずつ記録しました。
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 340" role="img" aria-label="文脈長と1トークンの時間の関係を積み上げで示したグラフ。行列積は文脈によらず87.3ミリ秒、CPUの小物も文脈によらず約26.7ミリ秒。attentionだけが文脈に比例して伸び、文脈64で5.3ミリ秒、128で7.7、256で12.7、384で17.4、504で21.9ミリ秒。合計は文脈64で119.2ミリ秒、504で135.9ミリ秒。">
+      <!-- 軸: x = 90 + T*600/512, y = 290 - ms*1.6667 (0..150ms) -->
+      <g stroke="currentColor" stroke-width="1" opacity=".1">
+        <line x1="90" y1="206.7" x2="700" y2="206.7"/>
+        <line x1="90" y1="123.3" x2="700" y2="123.3"/>
+        <line x1="90" y1="40" x2="700" y2="40"/>
+      </g>
+      <g font-family="var(--mono)" font-size="10" fill="currentColor" opacity=".55">
+        <text x="82" y="294" text-anchor="end">0</text>
+        <text x="82" y="210" text-anchor="end">50</text>
+        <text x="82" y="127" text-anchor="end">100</text>
+        <text x="82" y="44" text-anchor="end">150 ms</text>
+        <text x="165" y="308" text-anchor="middle">64</text>
+        <text x="240" y="308" text-anchor="middle">128</text>
+        <text x="390" y="308" text-anchor="middle">256</text>
+        <text x="540" y="308" text-anchor="middle">384</text>
+        <text x="690" y="308" text-anchor="middle">512</text>
+      </g>
+      <text x="395" y="330" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".7">文脈長 T</text>
+
+      <!-- 行列積 0 - 87.3 -->
+      <polygon points="165,290 681,290 681,144.5 165,144.5" fill="var(--tri)" fill-opacity=".55"/>
+      <!-- CPU 87.3 - 114.0 -->
+      <polygon points="165,144.5 681,144.5 681,100 165,100" fill="var(--cpu)" fill-opacity=".35"/>
+      <!-- attention: 上端 = 114.0 + attn -->
+      <polygon points="165,100 240,100 390,100 540,100 681,100 681,63.5 540,71 390,78.8 240,87.2 165,91.2"
+               fill="var(--attn)" fill-opacity=".6"/>
+      <polyline points="165,91.2 240,87.2 390,78.8 540,71 681,63.5" fill="none" stroke="var(--attn)" stroke-width="2"/>
+      <g fill="var(--attn)">
+        <circle cx="165" cy="91.2" r="3.5"/><circle cx="240" cy="87.2" r="3.5"/><circle cx="390" cy="78.8" r="3.5"/>
+        <circle cx="540" cy="71" r="3.5"/><circle cx="681" cy="63.5" r="4.5"/>
+      </g>
+      <line x1="90" y1="290" x2="700" y2="290" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+      <line x1="90" y1="40" x2="90" y2="290" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+
+      <text x="420" y="224" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--onfill)">行列積 87.3 ms（文脈によらない）</text>
+      <text x="420" y="127" text-anchor="middle" font-size="11.5" font-weight="700" fill="currentColor">CPU の小物 26.7 ms</text>
+      <text x="250" y="70" font-size="11.5" font-weight="700" fill="var(--attn)">attention 5.3 → 21.9 ms（T に比例）</text>
+      <text x="165" y="80" text-anchor="middle" font-size="10.5" font-family="var(--mono)" fill="currentColor">119.2</text>
+      <text x="681" y="52" text-anchor="middle" font-size="11" font-family="var(--mono)" font-weight="700" fill="currentColor">135.9</text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>図5 ／ 伸びるのは紫だけ。</b>
+      行列積と CPU の小物は文脈の長さによらず一定で、attention だけが T に比例して伸びます。
+      文脈 512 でも attention は全体の <b>16%</b> です。
+      段階5 のころは「attention を CPU に残すと文脈 2048 で全体の 96% を占める」という話でしたが、
+      回路にしたことで一番小さい塊になりました。（文脈 16 付近は最初の数トークンで遅く、グラフから外しています）
+    </figcaption>
+  </figure>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>文脈長 T</th><th>行列積</th><th>attention</th><th>CPU</th><th>合計</th><th>tok/s</th></tr></thead>
+    <tbody>
+      <tr><td>64</td><td>87.3</td><td>5.3</td><td>26.6</td><td>119.2</td><td>8.39</td></tr>
+      <tr><td>128</td><td>87.3</td><td>7.7</td><td>26.6</td><td>121.6</td><td>8.22</td></tr>
+      <tr><td>256</td><td>87.2</td><td>12.7</td><td>26.7</td><td>126.7</td><td>7.89</td></tr>
+      <tr><td>384</td><td>87.3</td><td>17.4</td><td>26.7</td><td>131.5</td><td>7.60</td></tr>
+      <tr class="hit"><td><strong>500〜512</strong></td><td>87.4</td><td>22.0</td><td>26.7</td><td><strong>136.0</strong></td><td><strong>7.35</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--ink-2)">
+    単位は ms。各行は前後 8 トークンの中央値。同じ条件でもう一度走らせた別の回では、文脈 512 で 138.0 ms（7.25 tok/s）でした。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">10</span><span>見込みと実物の差</span></h2>
+  <p class="sub">where the budget went</p>
+
+  <p>
+    段階10 では、部品を別々に測って足し、文脈 512 で <span class="num">109.2 ms</span> と見込んでいました。
+    実物は <span class="num">136.0 ms</span>。差の 26.8 ms がどこから来たかを並べます。
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 250" role="img" aria-label="文脈512での見込みと実物の比較。見込みは行列積78.4ミリ秒、attention20.2ミリ秒、小物10.7ミリ秒の合計109.2ミリ秒。実物は行列積87.4、attention22.0、CPU26.7の合計136.0ミリ秒。差は行列積がプラス9.0、attentionがプラス1.9、CPUがプラス16.0で、いちばん大きいのはCPUの小物。">
+      <!-- 1 ms = 3.4 px, x0 = 190 -->
+      <g font-size="11.5">
+        <rect x="40" y="18" width="15" height="10" fill="var(--tri)" fill-opacity=".75"/>
+        <text x="61" y="27" fill="currentColor" opacity=".8">行列積（PL）</text>
+        <rect x="170" y="18" width="15" height="10" fill="var(--attn)" fill-opacity=".8"/>
+        <text x="191" y="27" fill="currentColor" opacity=".8">attention（PL）</text>
+        <rect x="318" y="18" width="15" height="10" fill="var(--cpu)" fill-opacity=".55"/>
+        <text x="339" y="27" fill="currentColor" opacity=".8">CPU の小物</text>
+      </g>
+
+      <text x="180" y="72" text-anchor="end" font-size="12.5" fill="currentColor">段階10 の見込み</text>
+      <text x="180" y="88" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".55">部品を別々に測って足した</text>
+      <rect x="190" y="56" width="266.5" height="34" fill="var(--tri)" fill-opacity=".75"/>
+      <rect x="456.5" y="56" width="68.5" height="34" fill="var(--attn)" fill-opacity=".8"/>
+      <rect x="525" y="56" width="36.3" height="34" fill="var(--cpu)" fill-opacity=".55"/>
+      <text x="323" y="78" text-anchor="middle" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--onfill)">78.4</text>
+      <text x="491" y="78" text-anchor="middle" font-size="11" font-family="var(--mono)" font-weight="700" fill="var(--onfill)">20.2</text>
+      <text x="570" y="78" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="currentColor">109.2 ms</text>
+
+      <text x="180" y="142" text-anchor="end" font-size="12.5" font-weight="700" fill="currentColor">通しの実物</text>
+      <text x="180" y="158" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".55">文脈 500〜512 の中央値</text>
+      <rect x="190" y="126" width="297.2" height="34" fill="var(--tri)" fill-opacity=".75"/>
+      <rect x="487.2" y="126" width="74.8" height="34" fill="var(--attn)" fill-opacity=".8"/>
+      <rect x="562" y="126" width="90.8" height="34" fill="var(--cpu)" fill-opacity=".55"/>
+      <text x="338" y="148" text-anchor="middle" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--onfill)">87.4</text>
+      <text x="524.6" y="148" text-anchor="middle" font-size="11" font-family="var(--mono)" font-weight="700" fill="var(--onfill)">22.0</text>
+      <text x="607" y="148" text-anchor="middle" font-size="11" font-family="var(--mono)" font-weight="700" fill="currentColor">26.7</text>
+      <text x="660" y="148" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="currentColor">136.0 ms</text>
+
+      <g font-size="10.5" font-family="var(--mono)">
+        <text x="472" y="180" text-anchor="middle" fill="var(--tri)">+9.0</text>
+        <text x="524.6" y="180" text-anchor="middle" fill="var(--attn)">+1.9</text>
+        <text x="607" y="180" text-anchor="middle" font-weight="700" fill="var(--wrong)">+16.0</text>
+      </g>
+
+      <line x1="40" y1="200" x2="720" y2="200" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="224" font-size="12" fill="currentColor" opacity=".85">
+        行列積 +9.0 は転送が 10 回から 97 回に増えたぶん（うち約 6.6 ms は結果を非キャッシュ領域から写す時間）
+      </text>
+      <text x="40" y="244" font-size="12" fill="currentColor" opacity=".85">
+        <tspan font-weight="700" fill="var(--wrong)">CPU +16.0</tspan> はベンチに無かった仕事（活性値と K・V の INT8 化、語彙 32,002 個からの最大値探し）
+      </text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>図6 ／ いちばん外れたのは CPU。</b>
+      見込みの「小物 10.68 ms」は、正規化・RoPE・silu・残差だけを C で測った値でした。
+      実際には、回路に渡すたびに活性値を INT8 に丸め、K と V を INT8 にし、最後に語彙から最大値を探す仕事があります。
+      <b>部品を別々に測って足すと、部品と部品の間の仕事が抜け落ちます</b>。
+      通しで動かさないと見えない種類の誤差です。
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">11</span><span>ここまでで言えること・言えないこと</span></h2>
+  <p class="sub">what is measured and what is not</p>
+
+  <p><b>言えること。</b>すべて実機での実測です。</p>
+  <ul>
+    <li>文章を入れると、ボードが <b>行列積と attention を自作の回路で計算して</b>続きを生成する</li>
+    <li>ボードと Mac の logits は <b>191 トークンぶんビット単位で一致</b>し、回路への 3,509 回の呼び出しもすべて一致する</li>
+    <li>文脈 512 で <b>136〜138 ms ／ 7.3 tok/s</b>（2 回測定）。短い文脈なら 8.4 tok/s</li>
+    <li>ボード上で回路を通した perplexity は <b>35.69</b>。float の attention なら 35.56 なので、
+        回路の attention と固定尺度の KV で失ったのは 0.4%</li>
+  </ul>
+
+  <p><b>言えないこと。</b></p>
+  <ul>
+    <li><b>品質の最大の代償は lm_head の三値化です。</b>本来の fp16 なら perplexity 17.90 のところ、
+        三値で 35.59 と倍になっています。CMA に収めるための選択で、回路の問題ではありません</li>
+    <li><b>生成は貪欲法（毎回いちばん点数の高い語）です。</b>長く続けると
+        <em>The family was very poor.</em> を繰り返します。0.7B のモデルを貪欲法で回すとよく起きることで、
+        Mac の numpy でも同じ文章が出ます</li>
+    <li><b>比較相手の CPU 実装はまだ自作のベンチだけです。</b>llama.cpp のような実用実装とは比べていません</li>
+    <li><b>250 µs の余分</b>（8 節）の原因は分かっていません</li>
+  </ul>
+
+  <div class="keyline">
+    次に大きい塊は <b>CPU の小物 26.7 ms</b>（全体の 20%）です。
+    行列積を回路に移したら attention が目立ち、attention を移したら CPU が目立つ。
+    <b>いちばん長い棒から手をつける</b>のは、ここでも同じです。
+  </div>
+</section>
+
+<footer>
+  PYNQ-Z1 / XC7Z020-1CLG400C @ 125 MHz ・ Vivado 2024.1（Docker + Rosetta 2）・ PYNQ 3.1.1<br>
+  モデル <code>1bitLLM/bitnet_b1_58-large</code>（lm_head は三値）・ LUT 21,353（40%）／ FF 32,483 ／ BRAM 41 ／ DSP 38 ・ WNS +0.514 ns ・ CMA 179.1 MiB<br>
+  数値はすべて実機での実測。見込み（段階10）は部品ごとの実測を足したもの。<br>
+  前段の記録:
+  <a href="01-cpu-to-fabric.html">CPU からファブリックへ（入口）</a>
+  ／ <a href="02-two-ceilings.html">二つの天井（段階2）</a>
+  ／ <a href="03-the-wall-does-not-move.html">壁は動かない（段階2〜4）</a>
+  ／ <a href="04-reaching-the-wall.html">壁に届いた（段階5）</a>
+</footer>
+
+</div>
+<!-- nav -->
+<nav class="jnav foot" aria-label="開発記録のナビゲーション">
+  <a href="../index.html">開発記録の目次</a>
+  <a href="04-reaching-the-wall.html" rel="prev">← 前: 壁に届いた</a>
+  <a class="lang" href="../en/05-end-to-end.html" hreflang="en" lang="en">English</a>
+</nav>
+<!-- /nav -->
+</body>
+</html>

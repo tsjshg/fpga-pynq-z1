@@ -1,0 +1,1002 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>It Runs End to End</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=M+PLUS+1+Code:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --paper:#F4F6F7;
+    --card:#FFFFFF;
+    --ink:#1A2027;
+    --ink-2:#5C666F;
+    --ink-3:#8B959D;
+    --rule:#D9DFE3;
+    --rule-2:#EAEEF0;
+    --path:#1F5FA9;      /* datapath width, DMA, handoff */
+    --path-soft:#E4EDF7;
+    --ddr:#C0701A;       /* DDR, memory */
+    --ddr-soft:#F9EEE1;
+    --tri:#136B57;       /* ternary, matmul */
+    --tri-soft:#DFF0EA;
+    --attn:#6B4FA0;      /* attention */
+    --attn-soft:#EDE7F6;
+    --cpu:#77818A;       /* CPU small ops */
+    --onfill:#FFFFFF;    /* text on filled bars */
+    --wrong:#A33A3A;
+    --wrong-soft:#F7E9E9;
+    --serif:"Shippori Mincho B1",'Hiragino Mincho ProN',"Yu Mincho",serif;
+    --sans:"Zen Kaku Gothic New",'Hiragino Sans',"Yu Gothic",system-ui,sans-serif;
+    --mono:"M PLUS 1 Code",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme:dark;
+      --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+      --rule:#2E363D; --rule-2:#232A30;
+      --path:#6FA8E8; --path-soft:#1C2A3A;
+      --ddr:#E0A05B;  --ddr-soft:#332617;
+      --tri:#5CC4A7;  --tri-soft:#12302A;
+      --attn:#B49BE8; --attn-soft:#261E3A;
+      --cpu:#8F9AA3; --onfill:#0F1418;
+      --wrong:#DF8C8C; --wrong-soft:#33201F;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme:dark;
+    --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+    --rule:#2E363D; --rule-2:#232A30;
+    --path:#6FA8E8; --path-soft:#1C2A3A;
+    --ddr:#E0A05B;  --ddr-soft:#332617;
+    --tri:#5CC4A7;  --tri-soft:#12302A;
+    --attn:#B49BE8; --attn-soft:#261E3A;
+    --cpu:#8F9AA3; --onfill:#0F1418;
+    --wrong:#DF8C8C; --wrong-soft:#33201F;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--paper); color:var(--ink); font-family:var(--sans);
+    font-size:16px; line-height:1.9; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 96px;}
+  @media (min-width:600px){ .wrap{padding:0 24px 96px;} }
+
+  header{padding:64px 0 40px;border-bottom:1px solid var(--rule);}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+    color:var(--ink-3);text-transform:uppercase;margin-bottom:20px;
+  }
+  h1{
+    font-family:var(--serif);font-weight:700;
+    font-size:clamp(38px,7vw,58px);line-height:1.25;
+    margin:0 0 20px;text-wrap:balance;letter-spacing:.01em;
+  }
+  .standfirst{font-size:17px;color:var(--ink-2);margin:0;max-width:60ch;}
+
+  /* the text the board actually returned */
+  .run{
+    margin:32px 0 0;background:var(--card);border:1px solid var(--rule);border-radius:3px;
+    font-family:var(--mono);font-size:14px;line-height:1.8;overflow-x:auto;
+  }
+  .run .bar{
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    padding:8px 16px;border-bottom:1px solid var(--rule-2);font-size:11px;letter-spacing:.06em;color:var(--ink-3);
+  }
+  .run .body{padding:16px 16px 18px;}
+  .run .cmd{color:var(--ink-3);}
+  .run .in{color:var(--ink-2);}
+  .run .out{color:var(--ink);font-weight:700;}
+  .run .stat{margin-top:12px;color:var(--ink-3);font-size:12.5px;}
+  .run .stat b{color:var(--path);font-weight:700;}
+
+  section{margin-top:60px;}
+  h2{
+    font-family:var(--serif);font-weight:700;font-size:clamp(21px,4.4vw,26px);line-height:1.5;
+    margin:0 0 8px;display:flex;gap:16px;align-items:baseline;text-wrap:balance;
+  }
+  h2 .n{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--path);flex:none;padding-top:2px;}
+  h2 + .sub{
+    font-family:var(--mono);font-size:12px;color:var(--ink-3);
+    margin:0 0 24px 39px;letter-spacing:.04em;
+  }
+  p{margin:0 0 18px;}
+
+  figure{
+    margin:34px 0;background:var(--card);border:1px solid var(--rule);
+    border-radius:3px;padding:22px 16px 16px;
+  }
+  @media (min-width:600px){ figure{padding:26px 22px 18px;} }
+  .fig-scroll{overflow-x:auto;}
+  figure svg{display:block;width:100%;min-width:560px;height:auto;}
+  figcaption{
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--rule-2);
+    font-size:13px;line-height:1.75;color:var(--ink-2);
+  }
+  figcaption b{color:var(--ink);font-weight:700;}
+
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .tbl-scroll{overflow-x:auto;margin:26px 0;}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:500px;}
+  th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--rule-2);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule);
+  }
+  tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  tbody td:first-child{font-family:var(--sans);}
+  tbody td.t{font-family:var(--sans);text-align:left;color:var(--ink-2);font-size:13px;}
+  tr.hit td{background:var(--path-soft);}
+  tr.hit td strong{color:var(--path);}
+  tr.bad td{background:var(--wrong-soft);}
+  tr.bad td strong{color:var(--wrong);}
+
+  .callout{
+    border-left:3px solid var(--path);background:var(--path-soft);
+    padding:18px 20px;margin:28px 0;border-radius:0 3px 3px 0;
+  }
+  .callout p:last-child,.callout ul:last-child{margin-bottom:0;}
+  .callout .label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:var(--path);display:block;margin-bottom:8px;
+  }
+  .callout.fix{border-left-color:var(--wrong);background:var(--wrong-soft);}
+  .callout.fix .label{color:var(--wrong);}
+  .callout.win{border-left-color:var(--tri);background:var(--tri-soft);}
+  .callout.win .label{color:var(--tri);}
+
+  .keyline{
+    font-family:var(--serif);font-size:clamp(19px,3.6vw,22px);line-height:1.7;margin:34px 0;padding:22px 0;
+    border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);text-wrap:balance;
+  }
+  .keyline .num{font-size:1.18em;}
+
+  ul{margin:0 0 18px;padding-left:1.3em;}
+  li{margin-bottom:10px;}
+  code{font-family:var(--mono);font-size:.9em;background:var(--rule-2);padding:1px 5px;border-radius:3px;}
+  a{color:var(--path);text-underline-offset:2px;}
+  a:focus-visible{outline:2px solid var(--attn);outline-offset:3px;}
+
+  footer{margin-top:72px;padding-top:26px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3);}
+</style>
+<!-- nav -->
+<style>
+  body{margin:0}
+  img{max-width:100%}
+  .jnav{max-width:760px;margin:0 auto;padding:14px 16px 0;display:flex;flex-wrap:wrap;
+        gap:4px 18px;font-size:12.5px;line-height:1.7;opacity:.8}
+  .jnav.foot{padding:0 16px 40px}
+  .jnav a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
+  .jnav a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  .jnav .lang{margin-left:auto}
+  @media (min-width:600px){ .jnav{padding:14px 24px 0} .jnav.foot{padding:0 24px 40px} }
+</style>
+<!-- /nav -->
+</head>
+<body>
+<!-- nav -->
+<nav class="jnav" aria-label="Journal navigation">
+  <a href="../index.html">Journal index</a>
+  <a href="04-reaching-the-wall.html" rel="prev">← Previous: Reaching the Wall</a>
+  <a class="lang" href="../ja/05-end-to-end.html" hreflang="ja" lang="ja">日本語</a>
+</nav>
+<!-- /nav -->
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">PYNQ-Z1 · Stage 6 → 11 · 2026-09-28</div>
+  <h1>It Runs End to End</h1>
+  <p class="standfirst">
+    At the end of the previous entry I listed three things I couldn't claim yet.
+    <b>Not a single token had been generated end to end</b>, <b>the data streamed through was random numbers</b>,
+    and <b>the temperature of the exponent table was a placeholder</b>. This entry records how I cleared all three.
+  </p>
+  <p class="standfirst" style="margin-top:14px">
+    Now, when you give it text, the board computes one token at a time and returns a continuation.
+    Matmul and attention run on circuits I built; the rest runs on the CPU.
+    <b>When the Mac does the same computation, the logits match down to the last bit.</b>
+  </p>
+
+  <div class="run" role="group" aria-label="Example run on the board">
+    <div class="bar"><span>PYNQ-Z1 · bitnet_b1_58-large (0.7B, ternary)</span><span>actual board output, unedited</span></div>
+    <div class="body">
+      <div class="cmd">$ python3 bitnet_run.py gen "The capital of France is" 24</div>
+      <div><span class="in">The capital of France is</span> <span class="out">the city of Paris. The city has been the home of many people, from the ancient Greeks and the Romans</span></div>
+      <div class="stat">Per token <b>125.9 ms → 7.94 tok/s</b> (context around 30) · at context 512, <b>136–138 ms → 7.3 tok/s</b></div>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">01</span><span>Rounding the real weights broke the model</span></h2>
+  <p class="sub">stage 6 · the circuit was right, the model was not</p>
+
+  <p>
+    The first thing I did was take the real weights of SmolLM2-135M, the model I had used so far,
+    round them to ternary (−1 / 0 / +1), and stream them through the circuit. The circuit's answers
+    <b>matched numpy on all 239,232 words</b>. The circuit works correctly.
+  </p>
+  <p>As a model, though, it was completely broken.</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>SmolLM2-135M</th><th>perplexity</th><th>The capital of France is →</th></tr></thead>
+    <tbody>
+      <tr><td>As is (fp32)</td><td>18.31</td><td class="t">decent English</td></tr>
+      <tr class="bad"><td><strong>Rounded to ternary</strong></td><td><strong>9,176,689</strong></td><td class="t">makers emergmakermakermaker…</td></tr>
+      <tr><td>Reference: random pick from a 49,152-word vocabulary</td><td>49,152</td><td class="t">—</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    <b>187 times worse than picking at random</b>. Changing the rounding per row barely helps.
+    Each weight is off by 50–60%, and that error stacks up over 30 layers.
+  </p>
+  <div class="callout">
+    <span class="label">What I learned</span>
+    <p>
+      BitNet b1.58 is the name of a <b>model trained in ternary from the start</b>.
+      It is not the same thing as normally trained weights rounded to ternary afterward.
+      This has nothing to do with whether the circuit is correct, but it means <b>I had to pick a different model to run</b>.
+    </p>
+  </div>
+
+  <p>
+    This stage turned up one more thing. The circuit ran at <span class="num">100.0%</span> of the datapath width,
+    yet <b>83% of the time per token was fixed overhead from DMA calls</b>.
+    The format back then allowed "one x (input vector) per transfer," so every time the matrix changed I had to end the transfer,
+    and one token took <span class="num">181</span> calls. That became the homework for section 3.
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">02</span><span>Switching to a model trained in ternary</span></h2>
+  <p class="sub">stage 6.5 · the only one that fits in 512 MB</p>
+
+  <p>
+    I looked for a model already trained in ternary that fits in this board's 512 MB. The only candidate was
+    <code>1bitLLM/bitnet_b1_58-large</code> (0.7B).
+    I wrote the same quantization steps as the circuit in numpy and checked it:
+    <b>perplexity 17.90</b>. Still ternary, and better than SmolLM2 in fp32 (18.31).
+  </p>
+  <p>Its shape is different, though, so both the circuits and the way the data is packed had to be rebuilt.</p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th></th><th>SmolLM2-135M</th><th>bitnet_b1_58-large</th><th>Impact on the circuit</th></tr></thead>
+    <tbody>
+      <tr><td>hidden / FFN / layers</td><td>576 / 1536 / 30</td><td>1536 / 4096 / 24</td><td class="t">6× the weights (136 MB in ternary)</td></tr>
+      <tr><td>head_dim</td><td>64</td><td>96</td><td class="t">Attention circuit rebuilt</td></tr>
+      <tr><td>q : kv heads</td><td>9 : 3</td><td>16 : 16</td><td class="t">No GQA. Each byte is reused once instead of 3 times</td></tr>
+      <tr><td>lm_head</td><td>—</td><td>fp16 (not ternary)</td><td class="t">As is, 98 MB read every token</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    To save memory, I <b>dropped lm_head (the final matrix that scores all 32,002 vocabulary entries) to ternary</b>.
+    In INT8 the quality stays the same (17.90 → 17.89), but it doesn't fit in the region DMA can read (CMA).
+    In ternary, <b>perplexity doubles, 17.90 → 35.59</b>, but the text doesn't fall apart.
+    This is the quality price this setup pays. I come back to it in the last section.
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">03</span><span>Fixing the handoff</span></h2>
+  <p class="sub">stages 7 &amp; 8 · a header, then a variable row length</p>
+
+  <p>
+    How do you cut 181 calls? The circuit is already fast, so I changed <b>how data is handed to it</b>.
+    Put a small header at the front of the stream saying "R rows follow," and the circuit can move on
+    to the next group without ending the transfer when x changes. Next, I let the header also carry <b>the length of one row</b>.
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 330" role="img" aria-label="How the stream format evolved. In Stage 6 a transfer carried only one pair of x and rows, so one token took 181 transfers. Stage 7 added a header R so any number of groups can be chained: 12 transfers per token, or 6 round trips with two HP ports. Stage 8 also puts the row length BPR in the header, so rows can be cut to match the input dimension. Groups fell from 387 to 97, padding from 20% to 1.3%, weights from 169.7 to 141.3 MiB, and the matmul for one token took 76.87 ms.">
+      <text x="40" y="24" font-size="13" font-weight="700" fill="currentColor">The stream in one DMA transfer</text>
+
+      <!-- Stage 6 -->
+      <text x="40" y="60" font-size="12" font-weight="700" fill="currentColor">Stage 6</text>
+      <text x="40" y="76" font-size="10.5" fill="currentColor" opacity=".6">one x only</text>
+      <rect x="130" y="46" width="70" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+      <text x="165" y="67" text-anchor="middle" font-size="10.5" fill="var(--path)">x 640 B</text>
+      <rect x="204" y="46" width="200" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+      <text x="304" y="67" text-anchor="middle" font-size="10.5" fill="var(--tri)">rows × R (640 weights/row)</text>
+      <text x="414" y="67" font-size="10.5" fill="currentColor" opacity=".55">■ TLAST</text>
+      <text x="720" y="60" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">181 transfers</text>
+      <text x="720" y="76" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">83% fixed overhead</text>
+
+      <!-- Stage 7 -->
+      <text x="40" y="138" font-size="12" font-weight="700" fill="currentColor">Stage 7</text>
+      <text x="40" y="154" font-size="10.5" fill="currentColor" opacity=".6">header R</text>
+      <g>
+        <rect x="130" y="124" width="22" height="34" rx="2" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="141" y="145" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ddr)">R</text>
+        <rect x="154" y="124" width="46" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+        <text x="177" y="145" text-anchor="middle" font-size="10" fill="var(--path)">x</text>
+        <rect x="202" y="124" width="92" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="248" y="145" text-anchor="middle" font-size="10" fill="var(--tri)">rows × R</text>
+        <rect x="298" y="124" width="22" height="34" rx="2" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="309" y="145" text-anchor="middle" font-size="10" font-weight="700" fill="var(--ddr)">R</text>
+        <rect x="322" y="124" width="46" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+        <text x="345" y="145" text-anchor="middle" font-size="10" fill="var(--path)">x</text>
+        <rect x="370" y="124" width="92" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="416" y="145" text-anchor="middle" font-size="10" fill="var(--tri)">rows × R</text>
+        <text x="472" y="145" font-size="11" fill="currentColor" opacity=".6">… ■</text>
+      </g>
+      <text x="720" y="138" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="currentColor">12 transfers</text>
+      <text x="720" y="154" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">6 round trips on 2 HP</text>
+
+      <!-- Stage 8 -->
+      <text x="40" y="216" font-size="12" font-weight="700" fill="var(--path)">Stage 8</text>
+      <text x="40" y="232" font-size="10.5" fill="currentColor" opacity=".6">header R, BPR</text>
+      <g>
+        <rect x="130" y="202" width="40" height="34" rx="2" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="150" y="223" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ddr)">R,BPR</text>
+        <rect x="172" y="202" width="70" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+        <text x="207" y="223" text-anchor="middle" font-size="10" fill="var(--path)">x 1560 B</text>
+        <rect x="244" y="202" width="118" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="303" y="223" text-anchor="middle" font-size="10" fill="var(--tri)">rows × R (1560 wts)</text>
+        <rect x="366" y="202" width="40" height="34" rx="2" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="386" y="223" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--ddr)">R,BPR</text>
+        <rect x="408" y="202" width="104" height="34" rx="2" fill="var(--path)" fill-opacity=".16" stroke="var(--path)" stroke-width="1.2"/>
+        <text x="460" y="223" text-anchor="middle" font-size="10" fill="var(--path)">x 4120 B</text>
+        <rect x="514" y="202" width="80" height="34" rx="2" fill="var(--tri)" fill-opacity=".16" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="554" y="223" text-anchor="middle" font-size="10" fill="var(--tri)">rows × R</text>
+        <text x="600" y="223" font-size="11" fill="currentColor" opacity=".6">… ■</text>
+      </g>
+      <text x="720" y="216" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">5 round trips</text>
+      <text x="720" y="232" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">76.87 ms</text>
+
+      <line x1="40" y1="262" x2="720" y2="262" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="286" font-size="12" fill="currentColor" opacity=".85">
+        Stage 7: rows fixed at 640. Input 1536 padded to 640 × 3 = 1920; the CPU added the partial sums
+      </text>
+      <text x="40" y="308" font-size="12" fill="currentColor" opacity=".85">
+        Stage 8: rows of 1560 / 4120. <tspan font-weight="700" fill="var(--path)">groups 387 → 97, padding 20% → 1.3%, weights 169.7 → 141.3 MiB</tspan>
+      </text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>Figure 1 / I changed the outside of the circuit.</b>
+      The compute part (the ternary adder tree) is the same as in Stage 4. Only the input state machine changed.
+      LUTs went <span class="num">9,557 → 9,720</span>, barely more.
+      Even so, the matmul for one token dropped <b>96.51 ms → 76.87 ms</b> on two HP ports,
+      reaching <b>95.9%</b> of the DDR wall.
+    </figcaption>
+  </figure>
+
+  <p>
+    Variable row length paid off in three ways at once. Less padding cut the bytes read by 17%.
+    Group boundaries dropped to a quarter. And the cleanup step of adding partial sums on the CPU went away.
+    <b>One more thing: because the weights shrank to 141.3 MiB, attention could later share the same chip</b> (section 5).
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">04</span><span>Rebuilding attention</span></h2>
+  <p class="sub">stages 7c &amp; 9 · head_dim 96, no GQA, and a multiplier</p>
+
+  <div class="callout fix">
+    <span class="label">Before building, I re-measured the baseline</span>
+    <p>
+      I measured bitnet-large's attention on the CPU: <span class="num">96.22 ms</span> (context 512).
+      The converted estimate I had been using was <span class="num">180 ms</span>.
+      The old bench had been <b>built with NEON disabled (<code>-O2</code>)</b>. I corrected the earlier entries too.
+      With that, matmul (96.51 ms) and attention (96.22 ms) turned out to be <b>roughly half and half</b>.
+    </p>
+  </div>
+
+  <p>
+    The Stage 5b circuit only handles head_dim 64 and GQA 3:1, so it can't be used.
+    Before rebuilding, I checked one more thing in numpy.
+    Stage 5b squeezed the score into 8 bits with a fixed shift, <code>s &gt;&gt; 8</code>.
+    That ignores the quantization scales of q and K. On the real model,
+    <b>the temperature of the exponent drifts from layer to layer and head to head</b>.
+  </p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>How attention is built (lm_head in ternary)</th><th>perplexity</th></tr></thead>
+    <tbody>
+      <tr><td>Proper float softmax</td><td>35.56</td></tr>
+      <tr class="bad"><td><strong>Stage 5b as is (fixed shift)</strong></td><td><strong>58.25</strong></td></tr>
+      <tr class="hit"><td><strong>Multiplier m in the header (one multiplier)</strong></td><td><strong>35.90</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    I write <code>m = TAU · s<sub>q</sub> · s<sub>k</sub> / √96</code>, scaled by 2<sup>24</sup> into an integer, into the header.
+    The circuit multiplies the score by it, then looks up the exponent table. Real values range <span class="num">10,818–79,505</span>.
+    That doesn't fit in 16 bits, but fits exactly in the DSP's 18-bit input.
+    That settles the previous entry's "the exponent table's temperature is a placeholder."
+  </p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>Stage 9 attention circuit (2 HP ports)</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Verification</td><td>all 37,248 words match</td></tr>
+      <tr><td>Context 512, one token (24 layers × 16 heads)</td><td>20.22 ms</td></tr>
+      <tr><td>Read</td><td>1.872 GB/s (93.2% of the DDR wall)</td></tr>
+      <tr><td>Per byte</td><td>1.00 MAC (no GQA)</td></tr>
+      <tr><td>Multipliers</td><td>17 (Stage 5b: 48)</td></tr>
+      <tr class="hit"><td><strong>vs. CPU (NEON on)</strong></td><td><strong>4.8×</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    At 142.86 MHz, timing failed both times. The violation was not in my circuit but in
+    <b>the transfer length counter inside AXI DMA</b>. <b>I dropped the clock to 125 MHz.</b>
+    Two ports' datapath width is 2.000 GB/s, almost the same as the DDR wall of 2.009.
+    The circuit is bandwidth-bound, so the lower clock costs almost nothing.
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">05</span><span>Taking turns on one chip</span></h2>
+  <p class="sub">stage 10 · four DMAs, no switch</p>
+
+  <p>
+    I put the matmul circuit and the attention circuit in the same bitstream.
+    Within a token, the two always run in alternation.
+    So <b>I built no switching logic. I placed four DMAs and just kick whichever one is needed</b>.
+    They never run at the same time, so they don't fight over DDR.
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 318" role="img" aria-label="Processing flow of one layer. The CPU normalizes and quantizes; the PL does the qkv matmul; the CPU applies RoPE and converts q, K and V to INT8; the PL does attention; the CPU divides, normalizes and quantizes; the PL does the o matmul; the CPU adds the residual, normalizes and quantizes; the PL does the gate/up matmul; the CPU applies silu, normalizes and quantizes; the PL does the down matmul; the CPU adds the residual and moves to the next layer. Five PL transfers per layer; with 24 layers plus lm_head, 121 per token. Matmul uses simple transfers on DMA 0 and 1; attention uses SG transfers on DMA 2 and 3.">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <text x="40" y="24" font-size="13" font-weight="700" fill="currentColor">One layer (× 24 layers, then lm_head)</text>
+
+      <!-- row 1 -->
+      <g font-size="10.5">
+        <rect x="40" y="46" width="96" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="88" y="68" text-anchor="middle" fill="var(--cpu)">normalize</text>
+        <text x="88" y="84" text-anchor="middle" fill="var(--cpu)">to INT8</text>
+        <line x1="138" y1="72" x2="156" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="158" y="46" width="96" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.6"/>
+        <text x="206" y="68" text-anchor="middle" font-weight="700" fill="var(--tri)">matmul</text>
+        <text x="206" y="84" text-anchor="middle" fill="var(--tri)">q · k · v</text>
+        <line x1="256" y1="72" x2="274" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="276" y="46" width="110" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="331" y="68" text-anchor="middle" fill="var(--cpu)">RoPE</text>
+        <text x="331" y="84" text-anchor="middle" fill="var(--cpu)">q, K, V to INT8</text>
+        <line x1="388" y1="72" x2="406" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="408" y="46" width="104" height="52" rx="3" fill="var(--attn)" fill-opacity=".2" stroke="var(--attn)" stroke-width="1.6"/>
+        <text x="460" y="68" text-anchor="middle" font-weight="700" fill="var(--attn)">attention</text>
+        <text x="460" y="84" text-anchor="middle" fill="var(--attn)">16 heads</text>
+        <line x1="514" y1="72" x2="532" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="534" y="46" width="96" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="582" y="68" text-anchor="middle" fill="var(--cpu)">÷ denom, norm</text>
+        <text x="582" y="84" text-anchor="middle" fill="var(--cpu)">to INT8</text>
+        <line x1="632" y1="72" x2="650" y2="72" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="652" y="46" width="68" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.6"/>
+        <text x="686" y="68" text-anchor="middle" font-weight="700" fill="var(--tri)">matmul</text>
+        <text x="686" y="84" text-anchor="middle" fill="var(--tri)">o</text>
+      </g>
+      <path d="M686,100 L686,120 L88,120 L88,136" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+
+      <!-- row 2 -->
+      <g font-size="10.5">
+        <rect x="40" y="140" width="96" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="88" y="162" text-anchor="middle" fill="var(--cpu)">residual, norm</text>
+        <text x="88" y="178" text-anchor="middle" fill="var(--cpu)">to INT8</text>
+        <line x1="138" y1="166" x2="156" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="158" y="140" width="96" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.6"/>
+        <text x="206" y="162" text-anchor="middle" font-weight="700" fill="var(--tri)">matmul</text>
+        <text x="206" y="178" text-anchor="middle" fill="var(--tri)">gate · up</text>
+        <line x1="256" y1="166" x2="274" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="276" y="140" width="110" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="331" y="162" text-anchor="middle" fill="var(--cpu)">silu × up, norm</text>
+        <text x="331" y="178" text-anchor="middle" fill="var(--cpu)">to INT8</text>
+        <line x1="388" y1="166" x2="406" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="408" y="140" width="104" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.6"/>
+        <text x="460" y="162" text-anchor="middle" font-weight="700" fill="var(--tri)">matmul</text>
+        <text x="460" y="178" text-anchor="middle" fill="var(--tri)">down</text>
+        <line x1="514" y1="166" x2="532" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <rect x="534" y="140" width="96" height="52" rx="3" fill="none" stroke="var(--cpu)" stroke-width="1.2" stroke-dasharray="4 3"/>
+        <text x="582" y="162" text-anchor="middle" fill="var(--cpu)">residual</text>
+        <text x="582" y="178" text-anchor="middle" fill="var(--cpu)">next-layer norm</text>
+        <line x1="632" y1="166" x2="650" y2="166" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+        <text x="656" y="170" font-size="11" font-weight="700" fill="currentColor">next layer</text>
+      </g>
+
+      <line x1="40" y1="216" x2="720" y2="216" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <g font-size="11.5">
+        <rect x="40" y="232" width="15" height="11" fill="var(--tri)" fill-opacity=".35" stroke="var(--tri)"/>
+        <text x="62" y="242" fill="currentColor">matmul ── DMA 0, 1 (simple transfer) → ternary circuit × 2</text>
+        <rect x="40" y="254" width="15" height="11" fill="var(--attn)" fill-opacity=".35" stroke="var(--attn)"/>
+        <text x="62" y="264" fill="currentColor">attention ── DMA 2, 3 (SG transfer, sec. 6) → attention circuit × 2</text>
+        <rect x="40" y="276" width="15" height="11" fill="none" stroke="var(--cpu)" stroke-dasharray="3 2"/>
+        <text x="62" y="286" fill="currentColor">CPU ── floating-point small ops (C + NEON, sec. 7)</text>
+      </g>
+      <text x="720" y="264" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">5 transfers / layer</text>
+      <text x="720" y="286" text-anchor="end" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">121 transfers / token</text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>Figure 2 / PL and CPU hand off 10 times per layer.</b>
+      Colored boxes are circuits; dashed boxes are the CPU. Each box waits for the result of the one before it,
+      so <b>transfers can't be batched</b>. One token makes 121 round trips between the circuits and the CPU.
+      At Stage 10 this flow wasn't running yet. I <b>replayed one recorded token</b>
+      and measured the PL alone: <span class="num">98.57 ms</span> (450,178 words match).
+    </figcaption>
+  </figure>
+
+  <p>
+    Sharing one bitstream cost <b>1.4%</b> (projected 107.8 ms with separate bitstreams, 109.3 ms shared).
+    Nearly all of that difference came from extra round trips, because DMA transfers were cut to 8 MiB or less.
+    Resources: LUT 34%. Two-thirds of the chip is still free.
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">06</span><span>Streaming a growing KV without moving it</span></h2>
+  <p class="sub">stage 11 · scatter-gather instead of copying</p>
+
+  <p>
+    To run end to end, K and V must grow by one row per token (the KV cache).
+    This is where the attention circuit's input format became a problem.
+  </p>
+  <p>
+    The circuit takes a stream of <code>[header][q][K, T rows][V, T rows]</code>, joined head after head.
+    When T grows by 1, <b>the start of V and the positions of every later head shift</b>.
+    A simple DMA can only read "one contiguous region," so the choices are to repack the whole KV every token (36 MB at T=512)
+    or to end the transfer at every head (384 per token).
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 372" role="img" aria-label="Comparison of KV cache layouts. With simple transfers, one head's header, q, K and V must be packed with no gaps, so adding a new K row shifts V and every later head. With SG transfers, each head gets fixed slots for 512 context rows, with the K slot and the V slot kept separate. Descriptor A points at the first T rows of K and descriptor B at the first T rows of V; 16 descriptors for 8 heads join into one stream. Only the descriptors' length fields are rewritten each token.">
+      <defs>
+        <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+        <marker id="a3r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--wrong)"/>
+        </marker>
+        <marker id="a3p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="var(--path)"/>
+        </marker>
+      </defs>
+
+      <!-- simple transfer -->
+      <text x="40" y="24" font-size="12.5" font-weight="700" fill="var(--wrong)">Simple transfer as is (one contiguous region)</text>
+      <g font-size="10">
+        <rect x="40" y="40" width="28" height="32" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)"/>
+        <text x="54" y="60" text-anchor="middle" fill="var(--ddr)">H+q</text>
+        <rect x="70" y="40" width="140" height="32" fill="var(--path)" fill-opacity=".15" stroke="var(--path)"/>
+        <text x="140" y="60" text-anchor="middle" fill="var(--path)">K 0 … T−1</text>
+        <rect x="212" y="40" width="140" height="32" fill="var(--attn)" fill-opacity=".15" stroke="var(--attn)"/>
+        <text x="282" y="60" text-anchor="middle" fill="var(--attn)">V 0 … T−1</text>
+        <rect x="356" y="40" width="28" height="32" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)"/>
+        <text x="370" y="60" text-anchor="middle" fill="var(--ddr)">H+q</text>
+        <rect x="386" y="40" width="140" height="32" fill="var(--path)" fill-opacity=".15" stroke="var(--path)"/>
+        <text x="456" y="60" text-anchor="middle" fill="var(--path)">K</text>
+        <rect x="528" y="40" width="140" height="32" fill="var(--attn)" fill-opacity=".15" stroke="var(--attn)"/>
+        <text x="598" y="60" text-anchor="middle" fill="var(--attn)">V</text>
+        <text x="676" y="60" fill="currentColor" opacity=".6">…</text>
+      </g>
+      <line x1="211" y1="100" x2="211" y2="78" stroke="var(--wrong)" stroke-width="1.6" marker-end="url(#a3r)"/>
+      <text x="211" y="116" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--wrong)">new K row goes here</text>
+      <path d="M216,84 L720,84" fill="none" stroke="var(--wrong)" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#a3r)"/>
+      <text x="468" y="104" text-anchor="middle" font-size="10.5" fill="var(--wrong)">everything after this shifts (every token moves half the KV)</text>
+
+      <line x1="40" y1="138" x2="720" y2="138" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- SG -->
+      <text x="40" y="164" font-size="12.5" font-weight="700" fill="var(--path)">SG transfer (bound by descriptors) ── fixed slots per head</text>
+      <g font-size="10">
+        <rect x="40" y="180" width="28" height="32" fill="var(--ddr)" fill-opacity=".22" stroke="var(--ddr)"/>
+        <text x="54" y="200" text-anchor="middle" fill="var(--ddr)">H+q</text>
+        <rect x="70" y="180" width="310" height="32" fill="none" stroke="var(--path)"/>
+        <rect x="70" y="180" width="140" height="32" fill="var(--path)" fill-opacity=".2"/>
+        <text x="140" y="200" text-anchor="middle" fill="var(--path)">K 0 … T−1</text>
+        <rect x="210" y="180" width="8" height="32" fill="var(--path)" fill-opacity=".55"/>
+        <text x="300" y="200" text-anchor="middle" fill="currentColor" opacity=".5">free (up to 511)</text>
+        <rect x="384" y="180" width="310" height="32" fill="none" stroke="var(--attn)"/>
+        <rect x="384" y="180" width="140" height="32" fill="var(--attn)" fill-opacity=".2"/>
+        <text x="454" y="200" text-anchor="middle" fill="var(--attn)">V 0 … T−1</text>
+        <rect x="524" y="180" width="8" height="32" fill="var(--attn)" fill-opacity=".55"/>
+        <text x="614" y="200" text-anchor="middle" fill="currentColor" opacity=".5">free (up to 511)</text>
+      </g>
+      <text x="214" y="232" text-anchor="middle" font-size="10" fill="var(--path)">just append new rows</text>
+      <text x="528" y="232" text-anchor="middle" font-size="10" fill="var(--attn)">same: just append</text>
+
+      <!-- descriptors -->
+      <path d="M40,246 L40,256 L218,256 L218,246" fill="none" stroke="var(--path)" stroke-width="1.5"/>
+      <text x="129" y="274" text-anchor="middle" font-size="11" font-weight="700" fill="var(--path)">descriptor A</text>
+      <text x="129" y="290" text-anchor="middle" font-size="10" fill="var(--path)">104 + 96T bytes</text>
+      <path d="M384,246 L384,256 L532,256 L532,246" fill="none" stroke="var(--attn)" stroke-width="1.5"/>
+      <text x="458" y="274" text-anchor="middle" font-size="11" font-weight="700" fill="var(--attn)">descriptor B</text>
+      <text x="458" y="290" text-anchor="middle" font-size="10" fill="var(--attn)">96T bytes</text>
+      <path d="M170,280 C 260,300 330,300 404,282" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#a3)" opacity=".7"/>
+
+      <g font-family="var(--mono)" font-size="10.5">
+        <text x="40" y="330" fill="currentColor">1 layer:</text>
+        <text x="112" y="330" fill="var(--path)" font-weight="700">A₀</text>
+        <text x="134" y="330" fill="var(--attn)" font-weight="700">B₀</text>
+        <text x="156" y="330" fill="var(--path)" font-weight="700">A₁</text>
+        <text x="178" y="330" fill="var(--attn)" font-weight="700">B₁</text>
+        <text x="200" y="330" fill="currentColor" opacity=".6">…</text>
+        <text x="220" y="330" fill="var(--path)" font-weight="700">A₇</text>
+        <text x="242" y="330" fill="var(--attn)" font-weight="700">B₇</text>
+        <text x="272" y="330" fill="currentColor">→ the circuit sees one stream</text>
+      </g>
+      <text x="40" y="356" font-size="12" font-weight="700" fill="currentColor">Each token, only the length fields change. One TAILDESC write per layer starts it</text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>Figure 3 / Don't move the data; rewrite the reading order.</b>
+      SG (scatter-gather) is a DMA feature that walks a table (of descriptors) saying "where to read, and how many bytes."
+      K and V stay in separate places, yet reach the circuit as one stream.
+      <b>The only change was one line of DMA configuration; the attention circuit didn't change by a single bit</b>.
+      The cost was LUT +3,471 (40% overall).
+    </figcaption>
+  </figure>
+
+  <div class="callout">
+    <span class="label">One more decision ── fix the KV scale</span>
+    <p>
+      Up to Stage 9, the scale for turning K and V into INT8 came from "the maximum over all positions."
+      That <b>looks at future K that hasn't arrived yet</b>. And the maximum changes every time T grows,
+      so every past INT8 value would have to be redone. You can't append that way.
+    </p>
+    <p>
+      So I <b>fixed the scale per layer and per head</b>. I ran 144 tokens of text, separate from the evaluation text,
+      measured max|K| and max|V|, and keep using those. Perplexity went
+      <span class="num">35.90 → 35.61</span>. <b>Fixing the scale actually made it better</b>.
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">07</span><span>The same answer on the Mac and the board</span></h2>
+  <p class="sub">bit-identical logits on two machines</p>
+
+  <p>
+    Running end to end means more to verify.
+    Not just whether the circuit's answers are right, but <b>whether the whole token is right, including the CPU's floating-point math</b>.
+    So I ran the same computation on the Mac too, and compared both sets of logits (the scores for all 32,002 vocabulary entries).
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 330" role="img" aria-label="How verification works. In the middle are the files the Mac and the board share for the CPU side: the skeleton e2e_core.py and the floating-point small ops e2e_cpu.c run the same way on both. On the Mac, on the left, a numpy backend multiplies the ternary matrices in integers in place of the circuit. On the board, on the right, a backend drives the circuits through DMA. The board logs every circuit call, and the Mac recomputes them in integers to check them. Result: the logits matched bit for bit across 191 tokens, and all 3,509 circuit calls, 13,055,162 words, matched.">
+      <defs>
+        <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <text x="130" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">Mac (M4)</text>
+      <text x="630" y="26" text-anchor="middle" font-size="13" font-weight="700" fill="currentColor">PYNQ-Z1</text>
+
+      <!-- shared -->
+      <rect x="250" y="44" width="260" height="120" rx="4" fill="var(--path)" fill-opacity=".08" stroke="var(--path)" stroke-width="1.6"/>
+      <text x="380" y="68" text-anchor="middle" font-size="11.5" font-weight="700" fill="var(--path)">Same files on both</text>
+      <text x="380" y="96" text-anchor="middle" font-size="11" font-family="var(--mono)" fill="currentColor">e2e_core.py</text>
+      <text x="380" y="112" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">skeleton of one token</text>
+      <text x="380" y="138" text-anchor="middle" font-size="11" font-family="var(--mono)" fill="currentColor">e2e_cpu.c</text>
+      <text x="380" y="154" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">norm, RoPE, silu, quantize (NEON)</text>
+
+      <!-- left -->
+      <rect x="40" y="44" width="180" height="120" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="130" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">NumpyBackend</text>
+      <text x="130" y="96" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".8">multiplies ternary</text>
+      <text x="130" y="112" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".8">matrices as integers</text>
+      <text x="130" y="138" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">rebuilt from the board's .bin</text>
+      <text x="130" y="152" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">(also checks the packing)</text>
+      <line x1="222" y1="104" x2="246" y2="104" stroke="currentColor" stroke-width="1.3" marker-start="url(#a4)" marker-end="url(#a4)"/>
+
+      <!-- right -->
+      <rect x="540" y="44" width="180" height="120" rx="4" fill="var(--tri)" fill-opacity=".1" stroke="var(--tri)" stroke-width="1.4"/>
+      <text x="630" y="72" text-anchor="middle" font-size="11" font-weight="700" fill="var(--tri)">FpgaBackend</text>
+      <text x="630" y="96" text-anchor="middle" font-size="10.5" fill="var(--tri)">drives my circuits</text>
+      <text x="630" y="112" text-anchor="middle" font-size="10.5" fill="var(--tri)">through 4 DMAs</text>
+      <text x="630" y="138" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">KV lives in CMA as INT8</text>
+      <text x="630" y="152" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">179.1 MiB</text>
+      <line x1="514" y1="104" x2="538" y2="104" stroke="currentColor" stroke-width="1.3" marker-start="url(#a4)" marker-end="url(#a4)"/>
+
+      <!-- verification 1 -->
+      <path d="M630,168 L630,196 L130,196 L130,168" fill="none" stroke="var(--path)" stroke-width="1.5" marker-end="url(#a4)"/>
+      <text x="380" y="190" text-anchor="middle" font-size="10.5" fill="var(--path)">every circuit call logged and sent → Mac recomputes in integers</text>
+
+      <line x1="40" y1="222" x2="720" y2="222" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="248" font-size="12.5" font-weight="700" fill="currentColor">Results</text>
+      <g font-size="12">
+        <text x="40" y="274" fill="currentColor">logits (perplexity 130 tokens + 2 generations)</text>
+        <text x="720" y="274" text-anchor="end" font-family="var(--mono)" font-weight="700" fill="var(--tri)">191 tokens, all bit-identical</text>
+        <text x="40" y="298" fill="currentColor">circuit calls (1 generation; KV rebuilt from the log)</text>
+        <text x="720" y="298" text-anchor="end" font-family="var(--mono)" font-weight="700" fill="var(--tri)">3,509 calls · 13,055,162 words match</text>
+        <text x="40" y="322" fill="currentColor">perplexity</text>
+        <text x="720" y="322" text-anchor="end" font-family="var(--mono)" font-weight="700" fill="var(--tri)">35.690103 = 35.690103</text>
+      </g>
+    </svg>
+    </div>
+    <figcaption>
+      <b>Figure 4 / The only difference is the "circuit stand-in."</b>
+      The Mac and the board run the same code, with only the circuit part swapped out.
+      The circuit's answers are integers, so of course they match. But <b>because even the floating-point parts agreed to the last bit</b>,
+      a whole token can now be compared as one unit.
+      If anything drifted anywhere, it would show up somewhere in the logits.
+    </figcaption>
+  </figure>
+
+  <p>
+    The Mac (Apple M4) and the board (Cortex-A9) are both ARM, so the same <code>arm_neon.h</code> instructions work on both.
+    Even so, the results don't match unless you make them. These are the rules I set to make them match.
+  </p>
+  <ul>
+    <li><b>Don't fuse multiply and add</b> (<code>-ffp-contract=off</code>). Clang on the Mac fuses them into FMA by default</li>
+    <li><b>Fix the order of sums</b> (add in 4 lanes, then (0+1)+(2+3) at the end). No fast-math</li>
+    <li><b>Write exp and rounding myself</b>. <code>expf</code> and <code>rintf</code> can differ in the last bit from one libm to another</li>
+    <li><b>Don't use <code>vrecpsq_f32</code> to refine reciprocals</b>. Same name, but on AArch64 it is a fused operation and gives different results from ARMv7</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">08</span><span>Python was the slow part</span></h2>
+  <p class="sub">the hardware was fine all along</p>
+
+  <p>
+    When it first ran end to end, one token took <span class="num">225.6 ms</span>.
+    That's twice the Stage 10 projection (109 ms). This table records knocking out the causes one at a time.
+  </p>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>What changed</th><th>Per token</th><th>Why it helped</th></tr></thead>
+    <tbody>
+      <tr><td>(ref.) CPU small ops in numpy</td><td>305 ms for small ops alone</td><td class="t">The board's numpy doesn't use NEON; 20–100 ns per element</td></tr>
+      <tr><td>(ref.) Plain C</td><td>55 ms for small ops alone</td><td class="t"><code>rintf</code> is a function call; float compares stall the pipeline</td></tr>
+      <tr><td>(ref.) C + NEON</td><td>25 ms for small ops alone</td><td class="t">Rounding by a trick, exp as a polynomial, division via a reciprocal estimate</td></tr>
+      <tr><td>First end-to-end version</td><td>225.6 ms</td><td class="t">—</td></tr>
+      <tr><td>PYNQ arrays → plain numpy arrays</td><td>164–172 ms</td><td class="t">Every slice of a PYNQ array cost about 100 µs</td></tr>
+      <tr class="hit"><td><strong>DMA control moved to C</strong></td><td><strong>125.9 ms</strong></td><td class="t">Register access from Python is 6–14 µs each; that added up to hundreds of µs per transfer</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="callout fix">
+    <span class="label">At one point I blamed the hardware, and was wrong</span>
+    <p>
+      A measurement showed each DMA transfer taking about 150 µs longer than theory.
+      I guessed that polling the status register was slowing the transfer itself,
+      and built a version that "just watches the clock until the transfer should be done." <b>Nothing changed</b>.
+    </p>
+    <p>
+      Once I moved DMA control to C, transfers finished in the theoretical time.
+      <b>The hardware was fine all along; the delay was on the Python side</b>.
+      Still, the extra 250 µs from the "wait on the clock, then read once" experiment remains unexplained.
+    </p>
+  </div>
+
+  <p>
+    Stage 6 had the same story: "the circuit runs at 100% of the datapath width, yet call overhead is 83%."
+    The same thing happened here. <b>Handing data to the circuit takes as much work as making the circuit fast</b>.
+    That's where this stage spent most of its time.
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">09</span><span>What grows as the context grows</span></h2>
+  <p class="sub">only attention grows with T</p>
+
+  <p>
+    I kept generating up to context 512 (the size of the board's KV buffer)
+    and logged each component's time for every token.
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 340" role="img" aria-label="Stacked chart of context length vs. time per token. Matmul is 87.3 ms regardless of context, and CPU small ops about 26.7 ms regardless of context. Only attention grows in proportion to context: 5.3 ms at 64, 7.7 at 128, 12.7 at 256, 17.4 at 384, and 21.9 ms at 504. The total is 119.2 ms at context 64 and 135.9 ms at 504.">
+      <!-- axes: x = 90 + T*600/512, y = 290 - ms*1.6667 (0..150ms) -->
+      <g stroke="currentColor" stroke-width="1" opacity=".1">
+        <line x1="90" y1="206.7" x2="700" y2="206.7"/>
+        <line x1="90" y1="123.3" x2="700" y2="123.3"/>
+        <line x1="90" y1="40" x2="700" y2="40"/>
+      </g>
+      <g font-family="var(--mono)" font-size="10" fill="currentColor" opacity=".55">
+        <text x="82" y="294" text-anchor="end">0</text>
+        <text x="82" y="210" text-anchor="end">50</text>
+        <text x="82" y="127" text-anchor="end">100</text>
+        <text x="82" y="44" text-anchor="end">150 ms</text>
+        <text x="165" y="308" text-anchor="middle">64</text>
+        <text x="240" y="308" text-anchor="middle">128</text>
+        <text x="390" y="308" text-anchor="middle">256</text>
+        <text x="540" y="308" text-anchor="middle">384</text>
+        <text x="690" y="308" text-anchor="middle">512</text>
+      </g>
+      <text x="395" y="330" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".7">context length T</text>
+
+      <!-- matmul 0 - 87.3 -->
+      <polygon points="165,290 681,290 681,144.5 165,144.5" fill="var(--tri)" fill-opacity=".55"/>
+      <!-- CPU 87.3 - 114.0 -->
+      <polygon points="165,144.5 681,144.5 681,100 165,100" fill="var(--cpu)" fill-opacity=".35"/>
+      <!-- attention: top = 114.0 + attn -->
+      <polygon points="165,100 240,100 390,100 540,100 681,100 681,63.5 540,71 390,78.8 240,87.2 165,91.2"
+               fill="var(--attn)" fill-opacity=".6"/>
+      <polyline points="165,91.2 240,87.2 390,78.8 540,71 681,63.5" fill="none" stroke="var(--attn)" stroke-width="2"/>
+      <g fill="var(--attn)">
+        <circle cx="165" cy="91.2" r="3.5"/><circle cx="240" cy="87.2" r="3.5"/><circle cx="390" cy="78.8" r="3.5"/>
+        <circle cx="540" cy="71" r="3.5"/><circle cx="681" cy="63.5" r="4.5"/>
+      </g>
+      <line x1="90" y1="290" x2="700" y2="290" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+      <line x1="90" y1="40" x2="90" y2="290" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+
+      <text x="420" y="224" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--onfill)">matmul 87.3 ms (independent of context)</text>
+      <text x="420" y="127" text-anchor="middle" font-size="11.5" font-weight="700" fill="currentColor">CPU small ops 26.7 ms</text>
+      <text x="215" y="70" font-size="11.5" font-weight="700" fill="var(--attn)">attention 5.3 → 21.9 ms (linear in T)</text>
+      <text x="165" y="80" text-anchor="middle" font-size="10.5" font-family="var(--mono)" fill="currentColor">119.2</text>
+      <text x="681" y="52" text-anchor="middle" font-size="11" font-family="var(--mono)" font-weight="700" fill="currentColor">135.9</text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>Figure 5 / Only the purple grows.</b>
+      Matmul and CPU small ops stay flat regardless of context length; only attention grows in proportion to T.
+      Even at context 512, attention is <b>16%</b> of the total.
+      Back in Stage 5 the story was "leave attention on the CPU and at context 2048 it takes 96% of the total."
+      As a circuit, it became the smallest block. (Around context 16 the first few tokens are slow, so I left them off the chart.)
+    </figcaption>
+  </figure>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead><tr><th>Context length T</th><th>matmul</th><th>attention</th><th>CPU</th><th>total</th><th>tok/s</th></tr></thead>
+    <tbody>
+      <tr><td>64</td><td>87.3</td><td>5.3</td><td>26.6</td><td>119.2</td><td>8.39</td></tr>
+      <tr><td>128</td><td>87.3</td><td>7.7</td><td>26.6</td><td>121.6</td><td>8.22</td></tr>
+      <tr><td>256</td><td>87.2</td><td>12.7</td><td>26.7</td><td>126.7</td><td>7.89</td></tr>
+      <tr><td>384</td><td>87.3</td><td>17.4</td><td>26.7</td><td>131.5</td><td>7.60</td></tr>
+      <tr class="hit"><td><strong>500–512</strong></td><td>87.4</td><td>22.0</td><td>26.7</td><td><strong>136.0</strong></td><td><strong>7.35</strong></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p style="font-size:13px;color:var(--ink-2)">
+    Units are ms. Each row is the median of the surrounding 8 tokens. In a separate run under the same conditions, context 512 took 138.0 ms (7.25 tok/s).
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">10</span><span>Projection vs. the real thing</span></h2>
+  <p class="sub">where the budget went</p>
+
+  <p>
+    At Stage 10 I measured the parts separately and added them up, projecting <span class="num">109.2 ms</span> at context 512.
+    The real thing took <span class="num">136.0 ms</span>. Here is where the 26.8 ms difference came from.
+  </p>
+
+  <figure>
+    <div class="fig-scroll">
+    <svg viewBox="0 0 760 250" role="img" aria-label="Projection vs. the real thing at context 512. Projection: matmul 78.4 ms, attention 20.2 ms, small ops 10.7 ms, total 109.2 ms. Real: matmul 87.4, attention 22.0, CPU 26.7, total 136.0 ms. Differences: matmul +9.0, attention +1.9, CPU +16.0. The largest is the CPU small ops.">
+      <!-- 1 ms = 3.4 px, x0 = 190 -->
+      <g font-size="11.5">
+        <rect x="40" y="18" width="15" height="10" fill="var(--tri)" fill-opacity=".75"/>
+        <text x="61" y="27" fill="currentColor" opacity=".8">matmul (PL)</text>
+        <rect x="170" y="18" width="15" height="10" fill="var(--attn)" fill-opacity=".8"/>
+        <text x="191" y="27" fill="currentColor" opacity=".8">attention (PL)</text>
+        <rect x="318" y="18" width="15" height="10" fill="var(--cpu)" fill-opacity=".55"/>
+        <text x="339" y="27" fill="currentColor" opacity=".8">CPU small ops</text>
+      </g>
+
+      <text x="180" y="72" text-anchor="end" font-size="12.5" fill="currentColor">Stage 10 projection</text>
+      <text x="180" y="88" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".55">sum of separate measurements</text>
+      <rect x="190" y="56" width="266.5" height="34" fill="var(--tri)" fill-opacity=".75"/>
+      <rect x="456.5" y="56" width="68.5" height="34" fill="var(--attn)" fill-opacity=".8"/>
+      <rect x="525" y="56" width="36.3" height="34" fill="var(--cpu)" fill-opacity=".55"/>
+      <text x="323" y="78" text-anchor="middle" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--onfill)">78.4</text>
+      <text x="491" y="78" text-anchor="middle" font-size="11" font-family="var(--mono)" font-weight="700" fill="var(--onfill)">20.2</text>
+      <text x="570" y="78" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="currentColor">109.2 ms</text>
+
+      <text x="180" y="142" text-anchor="end" font-size="12.5" font-weight="700" fill="currentColor">Real, end to end</text>
+      <text x="180" y="158" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".55">median, context 500–512</text>
+      <rect x="190" y="126" width="297.2" height="34" fill="var(--tri)" fill-opacity=".75"/>
+      <rect x="487.2" y="126" width="74.8" height="34" fill="var(--attn)" fill-opacity=".8"/>
+      <rect x="562" y="126" width="90.8" height="34" fill="var(--cpu)" fill-opacity=".55"/>
+      <text x="338" y="148" text-anchor="middle" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--onfill)">87.4</text>
+      <text x="524.6" y="148" text-anchor="middle" font-size="11" font-family="var(--mono)" font-weight="700" fill="var(--onfill)">22.0</text>
+      <text x="607" y="148" text-anchor="middle" font-size="11" font-family="var(--mono)" font-weight="700" fill="currentColor">26.7</text>
+      <text x="660" y="148" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="currentColor">136.0 ms</text>
+
+      <g font-size="10.5" font-family="var(--mono)">
+        <text x="472" y="180" text-anchor="middle" fill="var(--tri)">+9.0</text>
+        <text x="524.6" y="180" text-anchor="middle" fill="var(--attn)">+1.9</text>
+        <text x="607" y="180" text-anchor="middle" font-weight="700" fill="var(--wrong)">+16.0</text>
+      </g>
+
+      <line x1="40" y1="200" x2="720" y2="200" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="224" font-size="12" fill="currentColor" opacity=".85">
+        Matmul +9.0: 10 → 97 transfers (about 6.6 ms of it is copying results out of uncached memory)
+      </text>
+      <text x="40" y="244" font-size="12" fill="currentColor" opacity=".85">
+        <tspan font-weight="700" fill="var(--wrong)">CPU +16.0</tspan> is work the bench lacked (INT8 for activations and K/V, argmax over 32,002 words)
+      </text>
+    </svg>
+    </div>
+    <figcaption>
+      <b>Figure 6 / The CPU missed by the most.</b>
+      The projected "small ops 10.68 ms" was measured in C for normalization, RoPE, silu and residuals only.
+      In reality there is more: rounding activations to INT8 before every handoff to the circuit, converting K and V to INT8, and finding the max over the vocabulary at the end.
+      <b>When you measure parts separately and add them up, the work between the parts falls out</b>.
+      It's the kind of error you only see by running end to end.
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">11</span><span>What I can and can't claim so far</span></h2>
+  <p class="sub">what is measured and what is not</p>
+
+  <p><b>What I can claim.</b> All of it measured on the real board.</p>
+  <ul>
+    <li>Given text, the board <b>computes matmul and attention on my own circuits</b> and generates a continuation</li>
+    <li>Board and Mac logits <b>match bit for bit across 191 tokens</b>, and all 3,509 circuit calls match too</li>
+    <li>At context 512, <b>136–138 ms / 7.3 tok/s</b> (measured twice). 8.4 tok/s at short context</li>
+    <li>Perplexity on the board through the circuits is <b>35.69</b>. Float attention gives 35.56,
+        so the circuit attention and fixed-scale KV cost 0.4%</li>
+  </ul>
+
+  <p><b>What I can't claim.</b></p>
+  <ul>
+    <li><b>The biggest quality price is the ternary lm_head.</b> The original fp16 gives perplexity 17.90;
+        ternary doubles it to 35.59. It's a choice made to fit in CMA, not a circuit problem</li>
+    <li><b>Generation is greedy (always the top-scoring word).</b> Run it long and it repeats
+        <em>The family was very poor.</em> That's common when you run a 0.7B model greedily,
+        and numpy on the Mac produces the same text</li>
+    <li><b>The CPU baseline is still only my own bench.</b> I haven't compared against a practical implementation like llama.cpp</li>
+    <li>The cause of the <b>extra 250 µs</b> (section 8) is unknown</li>
+  </ul>
+
+  <div class="keyline">
+    The next biggest block is <b>CPU small ops at 26.7 ms</b> (20% of the total).
+    Move matmul to a circuit and attention stands out; move attention and the CPU stands out.
+    <b>Start with the longest bar</b>, same as always.
+  </div>
+</section>
+
+<footer>
+  PYNQ-Z1 / XC7Z020-1CLG400C @ 125 MHz · Vivado 2024.1 (Docker + Rosetta 2) · PYNQ 3.1.1<br>
+  Model <code>1bitLLM/bitnet_b1_58-large</code> (lm_head in ternary) · LUT 21,353 (40%) / FF 32,483 / BRAM 41 / DSP 38 · WNS +0.514 ns · CMA 179.1 MiB<br>
+  All numbers measured on the real board. The projection (Stage 10) is the sum of per-part measurements.<br>
+  Earlier entries:
+  <a href="01-cpu-to-fabric.html">From CPU to Fabric (introduction)</a>
+  / <a href="02-two-ceilings.html">Two Ceilings (Stage 2)</a>
+  / <a href="03-the-wall-does-not-move.html">The Wall Doesn't Move (Stages 2–4)</a>
+  / <a href="04-reaching-the-wall.html">Reaching the Wall (Stage 5)</a>
+</footer>
+
+</div>
+<!-- nav -->
+<nav class="jnav foot" aria-label="Journal navigation">
+  <a href="../index.html">Journal index</a>
+  <a href="04-reaching-the-wall.html" rel="prev">← Previous: Reaching the Wall</a>
+  <a class="lang" href="../ja/05-end-to-end.html" hreflang="ja" lang="ja">日本語</a>
+</nav>
+<!-- /nav -->
+</body>
+</html>

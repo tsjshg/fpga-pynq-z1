@@ -1,0 +1,43 @@
+# 手元用（公開しない）。CLAUDE.md は開発記録、MEMO.md は自分用の再開手順、net/ は自宅 LAN の固定IP設定
+CLAUDE.md
+MEMO.md
+net/
+.claude/
+
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+
+# e2e_core.py が初回に焼く
+model/libe2e.dylib
+model/libe2e.so
+
+# 生成データ（重みを回路の形に詰めたもの・照合用の記録）。合計 1 GB 近い。
+# pack_e2e.py / pack_ternary.py / make_*_job.py / e2e_eval.py で作り直せる
+model/e2e/
+model/out/
+model/bnjob/
+model/bnjob2/
+model/bnjobv/
+model/atjob/
+
+# Vivado が hw/ に作るもの（build_*.tcl のプロジェクト・ログ）
+hw/dma*/
+hw/*.log
+hw/*.jou
+hw/*.str
+hw/.Xil/
+hw/NA/
+hw/sim/xsim.dir/
+hw/sim/*.log
+hw/sim/*.jou
+hw/sim/*.pb
+
+# ビットストリーム本体（1本 4 MB 前後）。.hwh と *_util.txt は残す。
+# 通しで使う combo3_125.bit だけは公開する（Vivado なしで試せるように）
+hw/out/*.bit
+!hw/out/combo3_125.bit
+
+# make_bundle.sh の出力（ボードへ送る一式）
+dist/

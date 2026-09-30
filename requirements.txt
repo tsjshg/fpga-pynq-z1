@@ -1,0 +1,22 @@
+# PC 側（model/pack_e2e.py などと hw/rtl/gen_*.py）を仮想環境で動かすためのもの。
+#
+#   python3 -m venv .venv
+#   . .venv/bin/activate
+#   pip install -r requirements.txt
+#
+# 外部の Python パッケージはこの 2 つだけ。safetensors の読み込みも BPE も numpy で自前実装している
+# （model/st_read.py・model/bpe.py）ので、torch / transformers / tokenizers は要らない。
+#
+# model/e2e_eval.py（ボードとビット単位で比べる）だけは C コンパイラと ARM64 の機械
+# （Apple Silicon の Mac など）が要る。model/e2e_cpu.c を NEON で書いているため。
+#
+# 【ボード（PYNQ-Z1）には入れないこと】
+# pynq/ のスクリプトは PYNQ イメージ付属の venv（/usr/local/share/pynq-venv・pynq 3.1.1・numpy 1.21.5）で
+# そのまま動く。pip で numpy を入れ替えると pynq が壊れるおそれがある。
+
+# 動作確認: Mac は numpy 2.5.1、ボードは 1.21.5。同じ e2e_core.py が両方で動き、logits もビット単位で一致した
+numpy>=1.21
+
+# hf_hub_download だけを使う（1bitLLM/bitnet_b1_58-large の重み・tokenizer.json の取得）。
+# 動作確認は 1.17.0
+huggingface_hub>=0.20

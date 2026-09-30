@@ -1,0 +1,883 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>From CPU to Fabric</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap">
+
+<style>
+:root {
+  --ground:      #F6F8F6;
+  --surface:     #FFFFFF;
+  --surface-alt: #ECF1EE;
+  --ink:         #15201D;
+  --ink-soft:    #55625E;
+  --ink-faint:   #8B9793;
+  --rule:        #DBE3DF;
+  --rule-strong: #C0CCC7;
+  --accent:      #0B6E67;
+  --accent-deep: #084F4A;
+  --accent-wash: #E1F0EC;
+  --hot:         #B0700F;
+  --hot-wash:    #F9EEDD;
+  --good:        #2C6A3D;
+  --bad:         #9E2F27;
+  --diag-fill:   #FFFFFF;
+  --diag-alt:    #EDF2F0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0E1413;
+    --surface:     #161E1C;
+    --surface-alt: #1D2725;
+    --ink:         #E4ECE9;
+    --ink-soft:    #97A6A1;
+    --ink-faint:   #6B7975;
+    --rule:        #283430;
+    --rule-strong: #3B4A45;
+    --accent:      #4FCCBD;
+    --accent-deep: #82E2D5;
+    --accent-wash: #11302C;
+    --hot:         #E0A455;
+    --hot-wash:    #2E2416;
+    --good:        #6DBE83;
+    --bad:         #E0837B;
+    --diag-fill:   #161E1C;
+    --diag-alt:    #1D2725;
+  }
+}
+:root[data-theme="dark"] {
+  --ground:      #0E1413;
+  --surface:     #161E1C;
+  --surface-alt: #1D2725;
+  --ink:         #E4ECE9;
+  --ink-soft:    #97A6A1;
+  --ink-faint:   #6B7975;
+  --rule:        #283430;
+  --rule-strong: #3B4A45;
+  --accent:      #4FCCBD;
+  --accent-deep: #82E2D5;
+  --accent-wash: #11302C;
+  --hot:         #E0A455;
+  --hot-wash:    #2E2416;
+  --good:        #6DBE83;
+  --bad:         #E0837B;
+  --diag-fill:   #161E1C;
+  --diag-alt:    #1D2725;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: 'IBM Plex Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont,
+               'Hiragino Sans', 'Yu Gothic', sans-serif;
+  font-size: 15px;
+  line-height: 1.9;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 56px 24px 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.mast { display: flex; flex-direction: column; gap: 12px; }
+.eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 11.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--accent);
+}
+h1 { font-size: 34px; line-height: 1.3; font-weight: 600; letter-spacing: -.01em; margin: 0; text-wrap: balance; }
+.standfirst { font-size: 16.5px; color: var(--ink-soft); max-width: 60ch; margin: 0; }
+.meta {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 12px; color: var(--ink-faint);
+  display: flex; flex-wrap: wrap; gap: 18px;
+  padding-top: 8px; border-top: 1px solid var(--rule);
+}
+
+section { display: flex; flex-direction: column; gap: 20px; }
+h2.sec {
+  font-size: 23px; font-weight: 600; margin: 0;
+  padding-bottom: 10px; border-bottom: 1px solid var(--rule-strong); text-wrap: balance;
+}
+h3 { font-size: 15.5px; font-weight: 600; margin: 0; color: var(--accent-deep); }
+p { margin: 0; max-width: 68ch; }
+strong { font-weight: 600; }
+em { font-style: normal; background: var(--hot-wash); color: var(--ink); padding: .05em .3em; }
+code, .mono { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: .88em; }
+code { background: var(--surface-alt); padding: .1em .38em; border-radius: 2px; }
+ul { margin: 0; padding-left: 1.25em; max-width: 68ch; display: flex; flex-direction: column; gap: 8px; }
+li::marker { color: var(--ink-faint); }
+
+figure {
+  margin: 0; display: flex; flex-direction: column; gap: 12px;
+  border: 1px solid var(--rule); background: var(--surface); padding: 22px 20px 18px;
+}
+figure svg { display: block; width: 100%; height: auto; color: var(--ink); }
+.figscroll { overflow-x: auto; }
+figcaption { font-size: 13px; color: var(--ink-soft); line-height: 1.8; max-width: 70ch; }
+figcaption b { color: var(--ink); font-weight: 600; }
+
+.scroll { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 480px; }
+th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--rule); vertical-align: top; }
+thead th {
+  background: var(--surface-alt); font-size: 11.5px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-soft); font-weight: 500; white-space: nowrap;
+}
+tbody tr:last-child td { border-bottom: none; }
+td.num, th.num { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tr.hi td { background: var(--accent-wash); }
+
+.note {
+  padding: 16px 20px; border-left: 3px solid var(--accent); background: var(--accent-wash);
+  font-size: 14px; display: flex; flex-direction: column; gap: 8px;
+}
+.note .lbl {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent-deep);
+}
+.note p { max-width: none; }
+
+.timeline { display: flex; flex-direction: column; border: 1px solid var(--rule); background: var(--surface); }
+.tl { display: grid; grid-template-columns: 78px 1fr; gap: 16px; padding: 14px 20px; border-bottom: 1px solid var(--rule); }
+.tl:last-child { border-bottom: none; }
+.tl-d { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 12px; color: var(--accent); padding-top: 4px; }
+.tl-b { display: flex; flex-direction: column; gap: 3px; }
+.tl-b b { font-size: 14.5px; font-weight: 600; }
+.tl-b span { font-size: 13.5px; color: var(--ink-soft); line-height: 1.75; }
+
+dl.gloss { margin: 0; display: grid; grid-template-columns: 132px 1fr; gap: 10px 18px; font-size: 13.5px; }
+dl.gloss dt { font-weight: 600; color: var(--accent-deep); }
+dl.gloss dd { margin: 0; color: var(--ink-soft); line-height: 1.75; }
+@media (max-width: 560px) { dl.gloss { grid-template-columns: 1fr; gap: 2px 0; } dl.gloss dd { margin-bottom: 10px; } }
+
+.note.later { border-left-color: var(--hot); background: var(--hot-wash); }
+.note.later .lbl { color: var(--hot); }
+
+.next-up {
+  display: flex; flex-direction: column; gap: 6px;
+  border: 1px solid var(--hot); background: var(--hot-wash);
+  padding: 16px 20px;
+}
+.next-up .lbl {
+  font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--hot);
+}
+.next-up p { font-size: 14px; margin: 0; }
+.next-up a { color: var(--hot); font-weight: 600; }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+<!-- nav -->
+<style>
+  body{margin:0}
+  img{max-width:100%}
+  .jnav{max-width:760px;margin:0 auto;padding:14px 16px 0;display:flex;flex-wrap:wrap;
+        gap:4px 18px;font-size:12.5px;line-height:1.7;opacity:.8}
+  .jnav.foot{padding:0 16px 40px}
+  .jnav a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
+  .jnav a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  .jnav .lang{margin-left:auto}
+  @media (min-width:600px){ .jnav{padding:14px 24px 0} .jnav.foot{padding:0 24px 40px} }
+</style>
+<!-- /nav -->
+</head>
+<body>
+<!-- nav -->
+<nav class="jnav" aria-label="Journal navigation">
+  <a href="../index.html">Journal index</a>
+  <a href="02-two-ceilings.html" rel="next">Next: Two Ceilings →</a>
+  <a class="lang" href="../ja/01-cpu-to-fabric.html" hreflang="ja" lang="ja">日本語</a>
+</nav>
+<!-- /nav -->
+<div class="wrap">
+
+<header class="mast">
+  <div class="eyebrow">FPGA inference accelerator / Progress report</div>
+  <h1>From CPU to Fabric</h1>
+  <p class="standfirst">
+    Where the plan to run a small language model fast on an FPGA stands now.
+    Why it is slow on a CPU, what changes when it moves to an FPGA, and how I measured that for the first time yesterday.
+  </p>
+  <div class="meta">
+    <span>2026-09-05</span>
+    <span>Measured on: PYNQ-Z1 (XC7Z020)</span>
+    <span>Before that: ADRFT1 (MPFS095T)</span>
+  </div>
+
+  <div class="next-up">
+    <span class="lbl">There is a follow-up — Update, 2026-09-08</span>
+    <p>
+      This document reflects my understanding <strong>as of 2026-09-05</strong>. When I re-measured three days later,
+      I found that <strong>my reading here, "the PL gets 74% of DDR", was wrong</strong>.
+      The 74% was not stuck at the DDR. It was stuck at <strong>a lower ceiling</strong> in front of it.
+      The direction of the conclusion is unchanged. The correct value was <strong>93.6% (1.97 GB/s)</strong>.
+    </p>
+    <p>
+      I have left this document as it was, to keep the record. For what changed and how, see
+      <a href="02-two-ceilings.html">"Two Ceilings"</a>.
+      The affected passages in the text are marked as well.
+    </p>
+  </div>
+</header>
+
+<section>
+  <h2 class="sec">What this project is aiming for</h2>
+  <p>
+    What I want to do is <strong>run a small quantized inference model on compute circuits I build myself in an FPGA</strong>.
+    I know a GPU would be faster. The point is to build it myself.
+  </p>
+  <p>
+    But the research and measurements so far have overturned my initial picture twice.
+    This document uses figures to share <strong>what I know now, and what I will do next</strong>.
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">Figure 1 — What is this chip, anyway?</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 380" role="img" aria-label="Block diagram of the Zynq chip. On the left, the PS (two Cortex-A9 cores running Linux). On the right, the PL (empty fabric with LUTs and DSPs). Below, the shared DDR3 memory. The PS controls the PL through the GP0 port, and the PL reaches DDR through the HP0 port.">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="currentColor"></polygon>
+          </marker>
+          <marker id="arh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="var(--hot)"></polygon>
+          </marker>
+        </defs>
+
+        <!-- chip outline -->
+        <rect x="30" y="26" width="660" height="180" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="5 4" opacity=".45"></rect>
+        <text x="42" y="46" font-size="11.5" fill="currentColor" opacity=".6">Inside one chip</text>
+
+        <!-- PS -->
+        <rect x="60" y="62" width="250" height="118" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="76" y="86" font-size="13.5" font-weight="600" fill="currentColor">PS (processor side)</text>
+        <text x="76" y="110" font-size="12" fill="currentColor" opacity=".8">Cortex-A9 ×2  650 MHz</text>
+        <text x="76" y="130" font-size="12" fill="currentColor" opacity=".8">Runs Linux</text>
+        <text x="76" y="156" font-size="11.5" fill="currentColor" opacity=".55">Complete as shipped</text>
+
+        <!-- PL -->
+        <rect x="410" y="62" width="250" height="118" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.8"></rect>
+        <text x="426" y="86" font-size="13.5" font-weight="600" fill="var(--hot)">PL (fabric)</text>
+        <text x="426" y="110" font-size="12" fill="currentColor" opacity=".8">LUT 53,200 / DSP 220</text>
+        <text x="426" y="130" font-size="12" fill="currentColor" opacity=".8">Empty inside</text>
+        <text x="426" y="156" font-size="11.5" fill="var(--hot)">You build the circuit and load it</text>
+
+        <!-- GP0 -->
+        <line x1="310" y1="112" x2="404" y2="112" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"></line>
+        <text x="357" y="103" font-size="11" text-anchor="middle" fill="currentColor" opacity=".75">GP0</text>
+        <text x="357" y="130" font-size="10" text-anchor="middle" fill="currentColor" opacity=".6">thin control path</text>
+
+        <!-- DDR -->
+        <rect x="235" y="292" width="250" height="62" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="360" y="317" font-size="13.5" font-weight="600" text-anchor="middle" fill="currentColor">DDR3 memory 512 MB</text>
+        <text x="360" y="337" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".7">Max bandwidth 2.1 GB/s (theoretical)</text>
+
+        <!-- PS -> DDR -->
+        <polyline points="185,180 185,246 300,246 300,286" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar)"></polyline>
+        <text x="150" y="232" font-size="11" fill="currentColor" opacity=".75">CPU memory access</text>
+
+        <!-- PL -> DDR (HP0) -->
+        <polyline points="535,180 535,246 420,246 420,286" fill="none" stroke="var(--hot)" stroke-width="2.2" marker-end="url(#arh)"></polyline>
+        <text x="556" y="232" font-size="11" fill="var(--hot)">HP0 = opened yesterday</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>The PS and the PL live on the same chip and share the same DDR memory.</b>
+      The PS is a finished CPU. The PL is "an empty lot for circuits", and what gets built there is up to me.
+      The road from the PL to DDR is the <b>HP port</b> (High Performance). Yesterday I opened one of those roads
+      and measured how wide it is.
+    </figcaption>
+  </figure>
+
+  <p>
+    The important point is that <em>the PL starts out empty</em>. It has 220 DSPs on it,
+    but they are not wired to anything, so they do nothing. You design what the circuit should do,
+    build a <strong>bitstream</strong> (a file with the circuit design baked in), and load it.
+  </p>
+  <p>
+    And <strong>the PL cannot reach DDR on its own.</strong> There is a gate called the HP port,
+    and only after you build a circuit that goes through it can the PL touch memory.
+    That gate being blocked is exactly where I got stuck on the ADRFT1.
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">Figure 2 — The fabric's raw material: the LUT</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 300" role="img" aria-label="Diagram of a LUT. Six input wires go into the LUT and one bit comes out. A LUT is a rewritable lookup table holding 64 answers. On the right, three 2-input truth tables (AND, OR, XOR) show that changing only the table contents turns it into a different circuit.">
+        <defs>
+          <marker id="ar5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="currentColor"></polygon>
+          </marker>
+        </defs>
+
+        <text x="30" y="52" font-size="12" fill="currentColor" opacity=".75">6 input bits</text>
+        <line x1="30" y1="72" x2="119" y2="72" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="90" x2="119" y2="90" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="108" x2="119" y2="108" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="126" x2="119" y2="126" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="144" x2="119" y2="144" stroke="currentColor" stroke-width="1.2"></line>
+        <line x1="30" y1="162" x2="119" y2="162" stroke="currentColor" stroke-width="1.2"></line>
+
+        <rect x="125" y="60" width="155" height="114" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.8"></rect>
+        <text x="202" y="98" font-size="16" font-weight="600" text-anchor="middle" fill="var(--hot)">LUT</text>
+        <text x="202" y="124" font-size="11.5" text-anchor="middle" fill="currentColor">A table of 64 answers</text>
+        <text x="202" y="146" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">Rewritable contents</text>
+
+        <line x1="280" y1="117" x2="336" y2="117" stroke="currentColor" stroke-width="1.4" marker-end="url(#ar5)"></line>
+        <text x="306" y="140" font-size="11" text-anchor="middle" fill="currentColor" opacity=".75">1 bit out</text>
+
+        <line x1="350" y1="40" x2="350" y2="252" stroke="currentColor" stroke-width="1" opacity=".3"></line>
+
+        <text x="365" y="52" font-size="12" fill="currentColor" opacity=".75">Change the table, get another circuit (2 inputs)</text>
+
+        <rect x="365" y="68" width="100" height="116" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1"></rect>
+        <text x="415" y="89" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">AND</text>
+        <line x1="365" y1="98" x2="465" y2="98" stroke="currentColor" stroke-width="1" opacity=".35"></line>
+        <text x="415" y="116" font-size="11.5" text-anchor="middle" fill="currentColor">0 0 → 0</text>
+        <text x="415" y="134" font-size="11.5" text-anchor="middle" fill="currentColor">0 1 → 0</text>
+        <text x="415" y="152" font-size="11.5" text-anchor="middle" fill="currentColor">1 0 → 0</text>
+        <text x="415" y="170" font-size="11.5" text-anchor="middle" fill="currentColor">1 1 → 1</text>
+
+        <rect x="475" y="68" width="100" height="116" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1"></rect>
+        <text x="525" y="89" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">OR</text>
+        <line x1="475" y1="98" x2="575" y2="98" stroke="currentColor" stroke-width="1" opacity=".35"></line>
+        <text x="525" y="116" font-size="11.5" text-anchor="middle" fill="currentColor">0 0 → 0</text>
+        <text x="525" y="134" font-size="11.5" text-anchor="middle" fill="currentColor">0 1 → 1</text>
+        <text x="525" y="152" font-size="11.5" text-anchor="middle" fill="currentColor">1 0 → 1</text>
+        <text x="525" y="170" font-size="11.5" text-anchor="middle" fill="currentColor">1 1 → 1</text>
+
+        <rect x="585" y="68" width="100" height="116" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1"></rect>
+        <text x="635" y="89" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">XOR</text>
+        <line x1="585" y1="98" x2="685" y2="98" stroke="currentColor" stroke-width="1" opacity=".35"></line>
+        <text x="635" y="116" font-size="11.5" text-anchor="middle" fill="currentColor">0 0 → 0</text>
+        <text x="635" y="134" font-size="11.5" text-anchor="middle" fill="currentColor">0 1 → 1</text>
+        <text x="635" y="152" font-size="11.5" text-anchor="middle" fill="currentColor">1 0 → 1</text>
+        <text x="635" y="170" font-size="11.5" text-anchor="middle" fill="currentColor">1 1 → 0</text>
+
+        <text x="365" y="208" font-size="11.5" fill="currentColor" opacity=".75">The hardware is the same. Only the answers differ.</text>
+        <text x="365" y="228" font-size="11.5" fill="currentColor" opacity=".75">With 6 inputs it is just 64 rows. Same principle.</text>
+
+        <line x1="30" y1="252" x2="690" y2="252" stroke="currentColor" stroke-width="1" opacity=".25"></line>
+        <text x="30" y="276" font-size="12.5" fill="currentColor">
+          53,200 of these LUTs and 106,400 flip-flops (1-bit memory cells): the fabric's raw material.
+        </text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>A LUT is a "rewritable lookup table". Depending on its contents, it can become any logic circuit.</b>
+      It holds 64 answers, one for each 6-bit input. Just by rewriting those 64 bits, it becomes an AND, an XOR, or an adder.
+      <b>A bitstream is a file with the table contents of every LUT and every wiring choice baked in.</b>
+      The moment it is loaded, the empty fabric becomes the intended circuit.
+    </figcaption>
+  </figure>
+
+  <p>
+    As a real example, here is how much the circuit I built yesterday actually used.
+  </p>
+
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Resource</th><th class="num">Used</th><th class="num">Total</th><th class="num">Share</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td>LUT</td><td class="num">4,360</td><td class="num">53,200</td><td class="num">8.2%</td><td>Anything: control, decisions, address calculation</td></tr>
+        <tr><td>Flip-flop</td><td class="num">6,199</td><td class="num">106,400</td><td class="num">5.8%</td><td>Holds a value for one clock</td></tr>
+        <tr><td>Block RAM</td><td class="num">11.5</td><td class="num">140</td><td class="num">8.2%</td><td>Temporary buffer for chunks of data</td></tr>
+        <tr class="hi"><td><strong>DSP</strong></td><td class="num"><strong>0</strong></td><td class="num">220</td><td class="num">0.0%</td><td><strong>Multiply only. Unused, since this circuit computes nothing</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>
+    The DSP count of exactly 0 makes the point nicely. That circuit only moves data and does no computation,
+    so it uses not a single multiplier. The division of labor is: <strong>LUTs do anything, DSPs only multiply</strong>.
+  </p>
+  <p>
+    You can build a multiplier out of LUTs too, but a multiplier of any reasonable width eats hundreds of them and runs slow.
+    That is why dedicated circuits come baked into the chip from the start.
+    The DSP on this chip is a <strong>25-bit × 18-bit signed multiplier</strong> with a 48-bit accumulator,
+    which is far too big for INT8.
+  </p>
+
+  <div class="note">
+    <span class="lbl">Going ternary makes DSPs unnecessary</span>
+    <p>
+      When weights are ternary (+1 / 0 / −1), a multiply becomes <strong>a three-way choice: add, do nothing, or subtract</strong>.
+      That is not a multiplication, so it is built <strong>from LUTs, not DSPs.</strong>
+      So on the ternary path, the budget that matters is not the 220 DSPs but <strong>the 53,200 LUTs</strong>.
+      A rough estimate says about 1,000–1,500 are needed, so <strong>LUTs will be left over too.</strong>
+      In the end, the conclusion stays the same: the only thing in short supply is bandwidth.
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Figure 3 — Why bandwidth is the wall</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 330" role="img" aria-label="Diagram of the weight flow. 135 million weights in DDR flow through a narrow pipe to the compute units. The pipe carries 0.77 gigabytes per second, and against that, only the equivalent of 4 of the 220 multipliers can actually be used.">
+        <defs>
+          <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="var(--hot)"></polygon>
+          </marker>
+        </defs>
+
+        <!-- DDR -->
+        <rect x="30" y="96" width="150" height="108" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="105" y="132" font-size="13" font-weight="600" text-anchor="middle" fill="currentColor">DDR</text>
+        <text x="105" y="156" font-size="12" text-anchor="middle" fill="currentColor" opacity=".8">135M weights</text>
+        <text x="105" y="178" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".6">All read per token</text>
+
+        <!-- pipe -->
+        <rect x="180" y="132" width="250" height="36" fill="var(--hot-wash)" stroke="var(--hot)" stroke-width="1.6"></rect>
+        <line x1="196" y1="150" x2="414" y2="150" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar2)"></line>
+        <text x="305" y="120" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">0.77 GB/s</text>
+        <text x="305" y="190" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".7">This width is the limit</text>
+
+        <!-- compute -->
+        <rect x="430" y="60" width="260" height="180" fill="var(--diag-fill)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="446" y="84" font-size="13" font-weight="600" fill="currentColor">PL multipliers (DSP): 220</text>
+
+        <!-- DSP grid: 11 x 5 = 55 squares representing 220 (each = 4) -->
+        <g>
+          <rect x="446" y="98" width="14" height="14" fill="var(--hot)" stroke="none"></rect>
+          <rect x="466" y="98" width="14" height="14" fill="var(--hot)" stroke="none"></rect>
+          <rect x="486" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="506" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="526" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="546" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="566" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="586" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="606" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="626" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+          <rect x="646" y="98" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8" opacity=".55"></rect>
+        </g>
+        <g opacity=".55">
+          <rect x="446" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="466" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="486" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="506" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="526" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="546" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="566" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="586" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="606" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="626" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="646" y="118" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="446" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="466" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="486" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="506" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="526" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="546" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="566" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="586" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="606" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="626" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="646" y="138" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="446" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="466" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="486" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="506" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="526" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="546" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="566" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="586" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="606" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="626" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="646" y="158" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="446" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="466" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="486" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="506" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="526" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="546" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="566" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="586" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="606" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="626" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+          <rect x="646" y="178" width="14" height="14" fill="var(--diag-alt)" stroke="currentColor" stroke-width=".8"></rect>
+        </g>
+        <text x="446" y="216" font-size="12" fill="var(--hot)" font-weight="600">■ = can actually work (about 8)</text>
+        <text x="446" y="234" font-size="11.5" fill="currentColor" opacity=".65">The other 212 just wait</text>
+
+        <text x="360" y="288" font-size="12.5" text-anchor="middle" fill="currentColor">
+          With INT8, each byte of weight gets exactly one multiply
+        </text>
+        <text x="360" y="310" font-size="12.5" text-anchor="middle" fill="currentColor" opacity=".75">
+          → More multipliers speed up nothing if the pipe is thin
+        </text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>What sets inference speed is not the number of compute units but how fast you can read from memory.</b>
+      Making one token means reading every weight once, and with INT8 each byte read triggers just one multiply.
+      So <b>"how many bytes you can read per second" is directly the upper limit on "how many computations you can do per second"</b>.
+      Of the 220 DSPs, this bandwidth can feed only about 8.
+      <b>(Update, 2026-09-08: the bandwidth is now settled at 1.97 GB/s, so this number becomes about 14.
+      That is 6% of the total. The point, that compute units are over-provisioned by an order of magnitude, still stands.)</b>
+    </figcaption>
+  </figure>
+
+  <p>
+    This was the first of my assumptions in this project to be overturned.
+    At first I thought, "Hundreds of DSPs are sitting idle, so this should get fast." In reality,
+    <strong>there were more than enough DSPs. What was short was the bandwidth from memory.</strong>
+  </p>
+
+  <div class="note">
+    <span class="lbl">The conclusion that follows</span>
+    <p>
+      To go faster, the most effective thing is to <strong>cut the number of bytes per weight</strong>.
+      Going from INT8 (1 byte/weight) to <strong>ternary</strong> (about 0.2 bytes/weight) lets the same bandwidth carry 5 times as many weights.
+      And with ternary weights, multiplies become additions and subtractions, so you don't even need DSPs.
+      <strong>That is why models like BitNet b1.58 suit this board.</strong>
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Figure 4 — What I measured yesterday: how much of the road can be used</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 300" role="img" aria-label="Comparison against the same DDR memory with 2.1 GB/s of bandwidth: two CPU cores use 0.70 GB/s, or 33 percent, while the PL uses 1.54 GB/s, or 74 percent.">
+        <!-- frame label -->
+        <text x="30" y="34" font-size="12.5" fill="currentColor" opacity=".75">DDR bandwidth (theoretical limit) = 2.1 GB/s</text>
+
+        <!-- ruler -->
+        <rect x="200" y="46" width="480" height="16" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1"></rect>
+        <text x="686" y="59" font-size="11" fill="currentColor" opacity=".6">2.1</text>
+
+        <!-- CPU bar -->
+        <text x="188" y="112" font-size="13" text-anchor="end" fill="currentColor">CPU, 2 cores</text>
+        <text x="188" y="130" font-size="11" text-anchor="end" fill="currentColor" opacity=".6">measured reads</text>
+        <rect x="200" y="94" width="480" height="40" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"></rect>
+        <rect x="200" y="94" width="160" height="40" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.2"></rect>
+        <text x="372" y="119" font-size="13" fill="currentColor">0.70 GB/s = 33%</text>
+
+        <!-- PL bar -->
+        <text x="188" y="192" font-size="13" text-anchor="end" fill="var(--hot)" font-weight="600">PL (yesterday)</text>
+        <text x="188" y="210" font-size="11" text-anchor="end" fill="currentColor" opacity=".6">measured via DMA</text>
+        <rect x="200" y="174" width="480" height="40" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"></rect>
+        <rect x="200" y="174" width="352" height="40" fill="var(--hot-wash)" stroke="var(--hot)" stroke-width="1.8"></rect>
+        <text x="376" y="200" font-size="13" text-anchor="middle" fill="var(--hot)" font-weight="600">1.54 GB/s = 74%</text>
+
+        <!-- ADRFT1 reference -->
+        <line x1="200" y1="244" x2="680" y2="244" stroke="currentColor" stroke-width="1" opacity=".2"></line>
+        <text x="188" y="270" font-size="12" text-anchor="end" fill="currentColor" opacity=".65">For reference: ADRFT1</text>
+        <text x="200" y="270" font-size="12" fill="currentColor" opacity=".65">4 CPU cores used only 13% of a 6.4 GB/s path</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>How much the CPU and the PL could each pull from the same DDR on the same board.</b>
+      The CPU, with both cores working flat out, got 33%. The PL, with a single DMA, got 74%.
+      Given the losses from refresh and bank switching, 74% is <b>close to the practical upper limit</b>,
+      so the PL side can be said to use the DDR fully.
+    </figcaption>
+  </figure>
+
+  <p>
+    That is what I meant by "the PL does the same job at 74%".
+    <strong>From the same memory, the CPU can pull only 30%, while the PL pulls a little over 70%.</strong>
+    A circuit that drives memory directly in hardware uses memory far more efficiently than a general-purpose CPU.
+  </p>
+  <div class="note later">
+    <span class="lbl">Update, 2026-09-08 — the 74% in this section was wrong</span>
+    <p>
+      <strong>The measured value of 1.54 GB/s itself is correct.</strong> The interpretation was wrong.
+      It is not 74% of the DDR's 2.1 GB/s. It is <strong>96% of the PL-side datapath width of 0.80 GB/s</strong>.
+      The AXI path is 64 bits wide, so it carries only 8 bytes per clock.
+      At 100 MHz the limit is <span class="mono">8 × 100,000,000 = 0.80 GB/s</span>.
+      Both the 0.77 read and the 0.77 write were hitting this ceiling, not the DDR.
+    </p>
+    <p>
+      I rebuilt the circuit as read-only and measured again. The true limit for the PL reading from DDR was
+      <strong>1.97 GB/s (93.6% of DDR)</strong>. Against the CPU's 33%, that is <strong>2.8×</strong>,
+      so the conclusion that "the PL can pull more out of DDR" actually got stronger.
+      The condition, though, is <strong>using two HP ports</strong>. With one, it only reaches 53.7%.
+      Details in <a href="02-two-ceilings.html">"Two Ceilings"</a>.
+    </p>
+  </div>
+
+  <p>
+    And on the ADRFT1, the CPU was pulling only 13%.
+    What felt "slow" on that board was not the DDR's performance.
+    It was <strong>the CPU failing to draw that performance out</strong>.
+    When I say <em>the hypothesis that "moving to the fabric is worth it" was backed by measurement</em>, this gap is what I mean.
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">Figure 5 — The circuit I built yesterday does nothing</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 320" role="img" aria-label="Block diagram of the circuit I built. The PS controls an AXI DMA through GP0. The DMA reads data from DDR, loops it through a FIFO, and writes it back to DDR. Reads and writes each run at 0.77 GB/s, for 1.54 GB/s in total as seen from DDR.">
+        <defs>
+          <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="currentColor"></polygon>
+          </marker>
+          <marker id="ar3h" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="var(--hot)"></polygon>
+          </marker>
+        </defs>
+
+        <!-- PS -->
+        <rect x="30" y="40" width="130" height="54" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.3"></rect>
+        <text x="95" y="72" font-size="12.5" text-anchor="middle" fill="currentColor">PS (CPU)</text>
+
+        <!-- DMA -->
+        <rect x="250" y="34" width="160" height="66" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.8"></rect>
+        <text x="330" y="60" font-size="12.5" font-weight="600" text-anchor="middle" fill="var(--hot)">AXI DMA</text>
+        <text x="330" y="82" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">Moves the data</text>
+
+        <!-- FIFO -->
+        <rect x="520" y="34" width="160" height="66" fill="var(--diag-fill)" stroke="currentColor" stroke-width="1.3"></rect>
+        <text x="600" y="60" font-size="12.5" text-anchor="middle" fill="currentColor">FIFO</text>
+        <text x="600" y="82" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">Just a pass-through</text>
+
+        <!-- control -->
+        <line x1="160" y1="67" x2="244" y2="67" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar3)"></line>
+        <text x="202" y="58" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".7">GP0</text>
+
+        <!-- DMA -> FIFO -->
+        <line x1="410" y1="55" x2="514" y2="55" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar3)"></line>
+        <line x1="514" y1="82" x2="410" y2="82" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar3)"></line>
+        <text x="462" y="46" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".7">out</text>
+        <text x="462" y="99" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".7">back</text>
+
+        <!-- DDR -->
+        <rect x="250" y="228" width="230" height="56" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.4"></rect>
+        <text x="365" y="253" font-size="13" font-weight="600" text-anchor="middle" fill="currentColor">DDR memory</text>
+        <text x="365" y="273" font-size="11" text-anchor="middle" fill="currentColor" opacity=".65">Limit 2.1 GB/s</text>
+
+        <!-- HP0 zone -->
+        <rect x="230" y="140" width="270" height="42" fill="var(--hot-wash)" stroke="var(--hot)" stroke-width="1.4"></rect>
+        <text x="365" y="166" font-size="12" text-anchor="middle" fill="var(--hot)" font-weight="600">HP0 (the gate between PL and DDR)</text>
+
+        <!-- read arrow -->
+        <polyline points="300,228 300,182" fill="none" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar3h)"></polyline>
+        <polyline points="300,140 300,100" fill="none" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar3h)"></polyline>
+        <text x="196" y="212" font-size="11.5" fill="var(--hot)">Read 0.77 GB/s</text>
+
+        <!-- write arrow -->
+        <polyline points="430,100 430,140" fill="none" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar3h)"></polyline>
+        <polyline points="430,182 430,228" fill="none" stroke="var(--hot)" stroke-width="2" marker-end="url(#ar3h)"></polyline>
+        <text x="452" y="212" font-size="11.5" fill="var(--hot)">Write 0.77 GB/s</text>
+
+        <text x="588" y="248" font-size="12.5" fill="currentColor" font-weight="600">Total 1.54 GB/s</text>
+        <text x="588" y="268" font-size="11" fill="currentColor" opacity=".65">= 74% of the limit</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>A circuit that just reads from DDR, loops the data once through the PL, and writes it back to DDR.</b>
+      It computes nothing. <b>The goal was not to build the factory. It was to measure the width of the road that brings materials to it.</b>
+      Reads and writes go through the same gate, so from the DDR's point of view the work is twice 0.77, or 1.54 GB/s.
+    </figcaption>
+  </figure>
+
+  <p>
+    There was a reason to go out of my way to build a circuit that does nothing.
+    If I build the compute units first and the result is slow, <strong>I can't tell whether the circuit is bad or the road is narrow.</strong>
+    If I pin down the width of the road first, the next compute circuit only has to be sized to consume that road fully.
+    It will be neither too big nor too small.
+  </p>
+  <p>
+    After each transfer I compared the source data and the result byte by byte and confirmed an <strong>exact match</strong>.
+    Fast but broken would be pointless.
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">Figure 6 — It all runs from one Mac</h2>
+
+  <figure>
+    <div class="figscroll">
+      <svg viewBox="0 0 720 210" role="img" aria-label="Workflow diagram. Docker and Rosetta on the Mac run x86 Linux. Vivado inside it generates a bitstream from the design, which is sent over the network to the PYNQ-Z1, loaded from Python, and measured. The whole thing forms one loop.">
+        <defs>
+          <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1 10,5 0,9" fill="currentColor"></polygon>
+          </marker>
+        </defs>
+
+        <rect x="20" y="52" width="150" height="76" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.3"></rect>
+        <text x="95" y="80" font-size="12.5" text-anchor="middle" font-weight="600" fill="currentColor">Mac (M4)</text>
+        <text x="95" y="100" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">Docker + Rosetta 2</text>
+        <text x="95" y="117" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">= x86 Linux</text>
+
+        <line x1="170" y1="90" x2="214" y2="90" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar4)"></line>
+
+        <rect x="220" y="52" width="150" height="76" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.6"></rect>
+        <text x="295" y="80" font-size="12.5" text-anchor="middle" font-weight="600" fill="var(--hot)">Vivado 2024.1</text>
+        <text x="295" y="100" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">Design → circuit</text>
+        <text x="295" y="117" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">7.5 minutes</text>
+
+        <line x1="370" y1="90" x2="414" y2="90" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar4)"></line>
+        <text x="392" y="80" font-size="10.5" text-anchor="middle" fill="currentColor" opacity=".65">.bit</text>
+
+        <rect x="420" y="52" width="130" height="76" fill="var(--diag-alt)" stroke="currentColor" stroke-width="1.3"></rect>
+        <text x="485" y="86" font-size="12.5" text-anchor="middle" fill="currentColor">Copy via scp</text>
+        <text x="485" y="106" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">over the LAN</text>
+
+        <line x1="550" y1="90" x2="594" y2="90" stroke="currentColor" stroke-width="1.3" marker-end="url(#ar4)"></line>
+
+        <rect x="600" y="52" width="100" height="76" fill="var(--diag-fill)" stroke="var(--hot)" stroke-width="1.6"></rect>
+        <text x="650" y="80" font-size="12.5" text-anchor="middle" font-weight="600" fill="var(--hot)">PYNQ-Z1</text>
+        <text x="650" y="100" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">Load in Python</text>
+        <text x="650" y="117" font-size="11" text-anchor="middle" fill="currentColor" opacity=".7">and measure</text>
+
+        <!-- feedback loop -->
+        <polyline points="650,128 650,168 95,168 95,132" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 4" marker-end="url(#ar4)" opacity=".7"></polyline>
+        <text x="372" y="186" font-size="11.5" text-anchor="middle" fill="currentColor" opacity=".7">Check the results, fix the design — about 15 min per loop</text>
+      </svg>
+    </div>
+    <figcaption>
+      <b>On an Apple Silicon Mac alone, the loop from FPGA design to measurement closes.</b>
+      Vivado runs only on x86 Linux, but Docker and Rosetta 2 made it work.
+      No programming hardware such as JTAG is needed. You just send the generated file over the network and load it from Python.
+    </figcaption>
+  </figure>
+
+  <p>
+    It looks mundane, but it may be the biggest result of this project so far.
+    <strong>On the ADRFT1, I never managed to build this loop.</strong>
+    Reprogramming its FPGA needed dedicated hardware (over ¥30,000), and a failed attempt could not be recovered.
+    On the PYNQ-Z1 that came out of a drawer, the loop ran on the first day.
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">How I got here</h2>
+
+  <div class="timeline">
+    <div class="tl">
+      <div class="tl-d">8/29–30</div>
+      <div class="tl-b">
+        <b>Found the cause of the ADRFT1's instability</b>
+        <span>A mistake in the device tree had the CPU claiming a memory region it cannot use as ordinary RAM.
+        A workaround that adds two lines to the boot script fixed it completely. It is applied to both boards, and they still run stably.</span>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="tl-d">9/3</div>
+      <div class="tl-b">
+        <b>The vendor said it won't fix it</b>
+        <span>They replied that they know about the bug but have no plans to fix it. The workaround became a permanent configuration, not a stopgap.</span>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="tl-d">9/4</div>
+      <div class="tl-b">
+        <b>Measured the bandwidth, and the picture changed</b>
+        <span>The ADRFT1's CPU was pulling only 13% of the DDR. The problem was not "DSPs are left over"
+        but "the road to memory isn't being used". It was also confirmed that the way to reprogram the FPGA was blocked, so
+        <b>I decided to cancel the FPGA plan on the ADRFT1</b>.</span>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="tl-d">9/5</div>
+      <div class="tl-b">
+        <b>Closed the loop on the PYNQ-Z1</b>
+        <span>Set up a 2017 board that came out of a drawer. Built a Vivado environment on the Mac,
+        generated my own bitstream, loaded it onto the board, and <b>measured PL→DDR bandwidth at 1.54 GB/s (74% of the limit)</b>.</span>
+      </div>
+    </div>
+    <div class="tl">
+      <div class="tl-d">9/8</div>
+      <div class="tl-b">
+        <b>That 74% turned out not to be about DDR</b>
+        <span>I built a "read-only" circuit with no write-back and re-measured at different clocks.
+        Every time, the result stuck at <b>99% of the datapath width</b>. The culprit was not the DDR but the width of the AXI path.
+        Only with two HP ports did the DDR side saturate, and <b>the true limit was settled at 1.97 GB/s (93.6% of DDR)</b>.
+        → <a href="02-two-ceilings.html">"Two Ceilings"</a></span>
+      </div>
+    </div>
+  </div>
+
+  <p>
+    By the way, I had been considering a move to the KV260 ($199, roughly 10× the PYNQ-Z1's performance), but
+    <strong>the PYNQ-Z1 turned out to be more capable than I expected, so that decision can probably wait.</strong>
+    A ternary 135M-class model fits in 512MB of memory, so there is a chance I can run it end to end on this board at least once.
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">What's next</h2>
+  <div class="scroll">
+    <table>
+      <thead><tr><th>Stage</th><th>Task</th><th>What it tells us</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="num">Done</td>
+          <td>Measure read-only bandwidth</td>
+          <td><b>Done on 2026-09-08. 1.97 GB/s (93.6% of DDR)</b>.
+              As expected, read-only got more, but for a different reason than I thought —
+              the headroom was not in the write-back but in the <b>datapath width</b>.
+              → <a href="02-two-ceilings.html">"Two Ceilings"</a></td>
+        </tr>
+        <tr class="hi">
+          <td class="num">Next</td>
+          <td>Line up INT8 multipliers</td>
+          <td>Size it to the width of the road. 220 are not needed.
+              <b>The settled design value is 14 at 142.86 MHz</b> (6% of the total)</td>
+        </tr>
+        <tr>
+          <td class="num">Main goal</td>
+          <td>Go ternary (BitNet b1.58)</td>
+          <td>1.0 → 0.2 bytes per weight. 5× as much through the same road.
+              <b>At 1.97 GB/s, that is the equivalent of 9.8 G weights per second</b></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p>
+    My expectation is that once ternary is done, <strong>a 135M-class model should run 10–20× faster than on the CPU</strong>,
+    and around 30 tokens per second should be within reach. But this is an estimate from the bandwidth I measured this time.
+    I won't know until it actually runs.
+  </p>
+</section>
+
+<section>
+  <h2 class="sec">Glossary</h2>
+  <dl class="gloss">
+    <dt>PS</dt><dd>Processing System. The finished CPU side of the chip. It runs Linux.</dd>
+    <dt>PL</dt><dd>Programmable Logic. An empty lot for circuits, where I build my own. Nearly a synonym for "fabric".</dd>
+    <dt>Fabric</dt><dd>The contents of the PL: a sea of rewritable circuitry. The name compares it to woven cloth.</dd>
+    <dt>Bitstream</dt><dd>A circuit design turned into a file that can be loaded into the chip (<span class="mono">.bit</span>). Loading it turns the PL into that circuit.</dd>
+    <dt>DSP</dt><dd>Small dedicated multiply circuits embedded in the fabric. This chip has 220.</dd>
+    <dt>HP port</dt><dd>High Performance port. The gate from the PL to DDR memory. Unless you build a circuit that goes through it, the PL cannot touch memory.</dd>
+    <dt>AXI</dt><dd>The standard for connecting components inside the chip. Something like a road standard.</dd>
+    <dt>DMA</dt><dd>Direct Memory Access. A carrier circuit that moves data to and from memory without going through the CPU.</dd>
+    <dt>Bandwidth</dt><dd>The number of bytes that can be moved per second. Throughout this project, this is what sets the speed.</dd>
+    <dt>Quantization</dt><dd>Making a model smaller by representing its weights with coarser numbers. INT8 is 1 byte; ternary is about 0.2 bytes.</dd>
+  </dl>
+</section>
+
+</div>
+<!-- nav -->
+<nav class="jnav foot" aria-label="Journal navigation">
+  <a href="../index.html">Journal index</a>
+  <a href="02-two-ceilings.html" rel="next">Next: Two Ceilings →</a>
+  <a class="lang" href="../ja/01-cpu-to-fabric.html" hreflang="ja" lang="ja">日本語</a>
+</nav>
+<!-- /nav -->
+</body>
+</html>

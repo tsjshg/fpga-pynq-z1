@@ -1,0 +1,787 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>壁は動かない</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Zen+Kaku+Gothic+New:wght@400;500;700&family=M+PLUS+1+Code:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --paper:#F4F6F7;
+    --card:#FFFFFF;
+    --ink:#1A2027;
+    --ink-2:#5C666F;
+    --ink-3:#8B959D;
+    --rule:#D9DFE3;
+    --rule-2:#EAEEF0;
+    --path:#1F5FA9;      /* 道幅（PL 側の天井） */
+    --path-soft:#E4EDF7;
+    --ddr:#C0701A;       /* DDR（メモリ側の壁） */
+    --ddr-soft:#F9EEE1;
+    --tri:#136B57;       /* 三値 */
+    --tri-soft:#DFF0EA;
+    --wrong:#A33A3A;
+    --wrong-soft:#F7E9E9;
+    --serif:"Shippori Mincho B1",'Hiragino Mincho ProN',"Yu Mincho",serif;
+    --sans:"Zen Kaku Gothic New",'Hiragino Sans',"Yu Gothic",system-ui,sans-serif;
+    --mono:"M PLUS 1 Code",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+      --rule:#2E363D; --rule-2:#232A30;
+      --path:#6FA8E8; --path-soft:#1C2A3A;
+      --ddr:#E0A05B;  --ddr-soft:#332617;
+      --tri:#5CC4A7;  --tri-soft:#12302A;
+      --wrong:#DF8C8C; --wrong-soft:#33201F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#14181C; --card:#1B2126; --ink:#E6EAED; --ink-2:#A3ADB5; --ink-3:#727C84;
+    --rule:#2E363D; --rule-2:#232A30;
+    --path:#6FA8E8; --path-soft:#1C2A3A;
+    --ddr:#E0A05B;  --ddr-soft:#332617;
+    --tri:#5CC4A7;  --tri-soft:#12302A;
+    --wrong:#DF8C8C; --wrong-soft:#33201F;
+  }
+
+  body{
+    background:var(--paper); color:var(--ink); font-family:var(--sans);
+    font-size:16px; line-height:1.9; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px;margin:0 auto;padding:0 24px 96px;}
+
+  header{padding:72px 0 40px;border-bottom:1px solid var(--rule);}
+  .eyebrow{
+    font-family:var(--mono);font-size:11px;letter-spacing:.18em;
+    color:var(--ink-3);text-transform:uppercase;margin-bottom:20px;
+  }
+  h1{
+    font-family:var(--serif);font-weight:700;
+    font-size:clamp(38px,7vw,58px);line-height:1.25;
+    margin:0 0 20px;text-wrap:balance;letter-spacing:.01em;
+  }
+  .standfirst{font-size:17px;color:var(--ink-2);margin:0;max-width:60ch;}
+
+  section{margin-top:60px;}
+  h2{
+    font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.5;
+    margin:0 0 8px;display:flex;gap:16px;align-items:baseline;text-wrap:balance;
+  }
+  h2 .n{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--path);flex:none;padding-top:2px;}
+  h2 + .sub{
+    font-family:var(--mono);font-size:12px;color:var(--ink-3);
+    margin:0 0 24px 39px;letter-spacing:.04em;
+  }
+  p{margin:0 0 18px;}
+
+  figure{
+    margin:34px 0;background:var(--card);border:1px solid var(--rule);
+    border-radius:3px;padding:26px 22px 18px;
+  }
+  figure svg{display:block;width:100%;max-width:100%;height:auto;}
+  figcaption{
+    margin-top:18px;padding-top:14px;border-top:1px solid var(--rule-2);
+    font-size:13px;line-height:1.75;color:var(--ink-2);
+  }
+  figcaption b{color:var(--ink);font-weight:700;}
+
+  .num{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .tbl-scroll{overflow-x:auto;margin:26px 0;}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px;}
+  th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--rule-2);}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{
+    font-family:var(--mono);font-size:11px;letter-spacing:.06em;
+    color:var(--ink-3);font-weight:500;border-bottom:1px solid var(--rule);
+  }
+  tbody td{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  tbody td:first-child{font-family:var(--sans);}
+  tr.hit td{background:var(--tri-soft);}
+  tr.hit td strong{color:var(--tri);}
+
+  .callout{
+    border-left:3px solid var(--path);background:var(--path-soft);
+    padding:18px 20px;margin:28px 0;border-radius:0 3px 3px 0;
+  }
+  .callout p:last-child{margin-bottom:0;}
+  .callout .label{
+    font-family:var(--mono);font-size:11px;letter-spacing:.12em;
+    color:var(--path);display:block;margin-bottom:8px;
+  }
+  .callout.fix{border-left-color:var(--wrong);background:var(--wrong-soft);}
+  .callout.fix .label{color:var(--wrong);}
+  .callout.win{border-left-color:var(--tri);background:var(--tri-soft);}
+  .callout.win .label{color:var(--tri);}
+
+  .keyline{
+    font-family:var(--serif);font-size:22px;line-height:1.7;margin:34px 0;padding:22px 0;
+    border-top:2px solid var(--ink);border-bottom:2px solid var(--ink);text-wrap:balance;
+  }
+  .keyline .num{font-size:26px;}
+
+  ul{margin:0 0 18px;padding-left:1.3em;}
+  li{margin-bottom:10px;}
+  code{font-family:var(--mono);font-size:.9em;background:var(--rule-2);padding:1px 5px;border-radius:3px;}
+  a{color:var(--path);text-underline-offset:2px;}
+
+  footer{margin-top:72px;padding-top:26px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink-3);}
+</style>
+<!-- nav -->
+<style>
+  body{margin:0}
+  img{max-width:100%}
+  .jnav{max-width:760px;margin:0 auto;padding:14px 16px 0;display:flex;flex-wrap:wrap;
+        gap:4px 18px;font-size:12.5px;line-height:1.7;opacity:.8}
+  .jnav.foot{padding:0 16px 40px}
+  .jnav a{color:inherit;text-underline-offset:3px;text-decoration-thickness:1px}
+  .jnav a:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+  .jnav .lang{margin-left:auto}
+  @media (min-width:600px){ .jnav{padding:14px 24px 0} .jnav.foot{padding:0 24px 40px} }
+</style>
+<!-- /nav -->
+</head>
+<body>
+<!-- nav -->
+<nav class="jnav" aria-label="開発記録のナビゲーション">
+  <a href="../index.html">開発記録の目次</a>
+  <a href="02-two-ceilings.html" rel="prev">← 前: 二つの天井</a>
+  <a href="04-reaching-the-wall.html" rel="next">次: 壁に届いた →</a>
+  <a class="lang" href="../en/03-the-wall-does-not-move.html" hreflang="en" lang="en">English</a>
+</nav>
+<!-- /nav -->
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">PYNQ-Z1 · 段階2 → 4 · 2026-09-08</div>
+  <h1>壁は動かない</h1>
+  <p class="standfirst">
+    メモリの壁は <span class="num">1.97 GB/s</span> で、どう設計しても動きません。
+    だから道を広げるのをやめて、<b>積荷のほうを小さくしました</b>。
+    重みを三値にすると、同じ壁から <span class="num">4.8 倍</span>の重みが出てきます。
+    掛け算器は 1 個も使っていません。
+  </p>
+  <p class="standfirst" style="margin-top:14px">
+    <b>追記（2026-09-13）:</b> そのあと「行列積以外」を実測したところ、
+    <b>attention が CPU で 83 ms</b> かかることが分かりました。7 節に足してあります。
+  </p>
+</header>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">01</span><span>三段でやったこと</span></h2>
+  <p class="sub">what the three stages measured</p>
+
+  <p>
+    段階2で<b>壁の位置</b>を測り、段階3で<b>壁まで計算</b>できる回路を作り、
+    段階4で<b>同じ壁から5倍</b>を引き出しました。全部このボード1枚の上での実測です。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 380" role="img" aria-label="上段はDDRから運んだバイト数で、段階2が毎秒1.97ギガバイト、段階3が1.91、段階4が1.83とほぼ変わらない。下段は処理した重みの数で、段階3のINT8が毎秒1.91ギガ個に対し段階4の三値は9.16ギガ個と4.8倍になっている。運んだ量は同じでも取り出した重みの数が桁で違う。">
+      <!-- ===== 上段: バイト数 ===== -->
+      <text x="40" y="34" font-size="13" font-weight="700" fill="currentColor">DDR から運んだバイト数</text>
+      <text x="220" y="34" font-size="11.5" fill="currentColor" opacity=".6">GB/s ・ どれもほぼ同じ＝壁</text>
+
+      <g stroke="currentColor" stroke-width="1" opacity=".13">
+        <line x1="297" y1="48" x2="297" y2="170"/>
+        <line x1="404" y1="48" x2="404" y2="170"/>
+        <line x1="510" y1="48" x2="510" y2="170"/>
+        <line x1="617" y1="48" x2="617" y2="170"/>
+      </g>
+      <line x1="190" y1="48" x2="190" y2="170" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+
+      <!-- 壁 -->
+      <line x1="611" y1="44" x2="611" y2="176" stroke="var(--ddr)" stroke-width="2" stroke-dasharray="5 4"/>
+      <text x="611" y="36" text-anchor="middle" font-size="11" font-weight="700" fill="var(--ddr)">壁 1.97</text>
+
+      <text x="180" y="76" text-anchor="end" font-size="12.5" fill="currentColor">段階2 ・ 計算なし</text>
+      <rect x="190" y="58" width="421" height="26" fill="var(--ddr)" opacity=".55"/>
+      <text x="200" y="76" font-size="12" font-family="var(--mono)" font-weight="700" fill="#241505">1.97</text>
+
+      <text x="180" y="114" text-anchor="end" font-size="12.5" fill="currentColor">段階3 ・ INT8</text>
+      <rect x="190" y="96" width="408" height="26" fill="var(--path)" opacity=".75"/>
+      <text x="200" y="114" font-size="12" font-family="var(--mono)" font-weight="700" fill="#fff">1.91</text>
+
+      <text x="180" y="152" text-anchor="end" font-size="12.5" fill="currentColor">段階4 ・ 三値</text>
+      <rect x="190" y="134" width="391" height="26" fill="var(--tri)" opacity=".8"/>
+      <text x="200" y="152" font-size="12" font-family="var(--mono)" font-weight="700" fill="#fff">1.83</text>
+
+      <line x1="190" y1="176" x2="670" y2="176" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+      <g font-family="var(--mono)" font-size="10" fill="currentColor" opacity=".5">
+        <text x="190" y="192" text-anchor="middle">0</text>
+        <text x="404" y="192" text-anchor="middle">1.0</text>
+        <text x="617" y="192" text-anchor="middle">2.0</text>
+      </g>
+
+      <line x1="40" y1="216" x2="720" y2="216" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- ===== 下段: 重みの数 ===== -->
+      <text x="40" y="250" font-size="13" font-weight="700" fill="currentColor">取り出した重みの数</text>
+      <text x="200" y="250" font-size="11.5" fill="currentColor" opacity=".6">G重み/s ・ ここが 4.8 倍になった</text>
+
+      <g stroke="currentColor" stroke-width="1" opacity=".13">
+        <line x1="284" y1="262" x2="284" y2="346"/>
+        <line x1="378" y1="262" x2="378" y2="346"/>
+        <line x1="472" y1="262" x2="472" y2="346"/>
+        <line x1="566" y1="262" x2="566" y2="346"/>
+        <line x1="660" y1="262" x2="660" y2="346"/>
+      </g>
+      <line x1="190" y1="262" x2="190" y2="346" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+
+      <text x="180" y="290" text-anchor="end" font-size="12.5" fill="currentColor">段階3 ・ INT8</text>
+      <rect x="190" y="272" width="90" height="26" fill="var(--path)" opacity=".75"/>
+      <text x="290" y="290" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--path)">1.91</text>
+
+      <text x="180" y="328" text-anchor="end" font-size="12.5" fill="currentColor">段階4 ・ 三値</text>
+      <rect x="190" y="310" width="431" height="26" fill="var(--tri)" opacity=".8"/>
+      <text x="200" y="328" font-size="12" font-family="var(--mono)" font-weight="700" fill="#fff">9.16</text>
+      <text x="631" y="328" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--tri)">4.8 倍</text>
+
+      <line x1="190" y1="346" x2="670" y2="346" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+      <g font-family="var(--mono)" font-size="10" fill="currentColor" opacity=".5">
+        <text x="190" y="362" text-anchor="middle">0</text>
+        <text x="378" y="362" text-anchor="middle">4</text>
+        <text x="566" y="362" text-anchor="middle">8</text>
+      </g>
+    </svg>
+    <figcaption>
+      <b>図1 ／ 運んだ量は変えていない。取り出した数を変えた。</b>
+      上段はどれもほぼ同じで、これが動かない壁です。
+      変わったのは下段——<b>同じ 1 バイトから何個の重みを取り出すか</b>。
+      INT8 は 1 個、三値は 5 個。掛け算の速さでも演算器の数でもなく、
+      <b>データの詰め方</b>で 4.8 倍になりました。
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">02</span><span>段階2 ・ 壁の位置を測る</span></h2>
+  <p class="sub">where the wall actually is</p>
+
+  <p>
+    最初にやったのは「どこまで速く読めるか」の確定です。ここは
+    <a href="02-two-ceilings.html">別の資料（二つの天井）</a>に
+    詳しく書いたので要点だけ。
+  </p>
+  <p>
+    天井は2つあります。<b>DDR そのものの速さ</b>（2.1 GB/s・買った時点で決まる）と、
+    <b>PL 側の道幅</b>（8 バイト × クロック・設計で変えられる）。
+    HP ポート1本では道幅が先に詰まって DDR の半分しか使えず、
+    <b>2本にして初めて DDR 側が飽和</b>しました。
+  </p>
+
+  <div class="keyline">
+    このボードの本当の上限は <span class="num">1.97 GB/s</span>。
+    理論値 2.1 の 93.6% で、残りはリフレッシュなどの避けられない損失です。
+    <b>ここから先は、この数字を前提に設計します。</b>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">03</span><span>段階3 ・ 壁まで計算する</span></h2>
+  <p class="sub">does computing cost bandwidth?</p>
+
+  <p>
+    段階2で使ったのは<b>受け取って捨てるだけの回路</b>でした。
+    そこを本物の掛け算器に差し替えて、問いは一つだけ——
+    <b>計算させても 1.97 GB/s を保てるか</b>。
+  </p>
+  <p>
+    保てない可能性は十分ありました。演算が追いつかなければ回路が上流を止め、
+    その瞬間に帯域が落ちるからです。だから設計上の絶対条件を一つ置きました。
+    <b>受け入れ信号を常に 1 にする。上流を絶対に止めない。</b>
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 330" role="img" aria-label="段階3の回路。入力ストリームは先頭512バイトが入力ベクトルxで、以降は512バイトずつの重みの行が続く。DDRから読んだ重みはAXI DMAを通ってMACアレイに入り、1クロックあたり8バイトを8個の掛け算器で処理する。512バイトごとに32ビットの結果が出て、FIFOを経てDDRに書き戻される。書き戻しは読みの0.8パーセントしかない。">
+      <defs>
+        <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- ストリームの形 -->
+      <text x="40" y="34" font-size="13" font-weight="700" fill="currentColor">入力ストリームの形</text>
+
+      <rect x="40" y="48" width="130" height="42" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.4"/>
+      <text x="105" y="66" text-anchor="middle" font-size="12" font-weight="700" fill="var(--tri)">x（512 B）</text>
+      <text x="105" y="82" text-anchor="middle" font-size="10.5" fill="var(--tri)" opacity=".85">先頭で取り込む</text>
+
+      <rect x="176" y="48" width="112" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="232" y="74" text-anchor="middle" font-size="12" fill="currentColor">行1（512 B）</text>
+      <rect x="294" y="48" width="112" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="350" y="74" text-anchor="middle" font-size="12" fill="currentColor">行2（512 B）</text>
+      <rect x="412" y="48" width="112" height="42" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+      <text x="468" y="74" text-anchor="middle" font-size="12" fill="currentColor">行3（512 B）</text>
+      <text x="546" y="74" font-size="13" fill="currentColor" opacity=".55">…… 65,535 行</text>
+
+      <text x="40" y="112" font-size="11.5" fill="currentColor" opacity=".7">
+        x を別の経路で配らずに済むので、AXI スレーブも BRAM 制御器も要らない
+      </text>
+
+      <line x1="40" y1="136" x2="720" y2="136" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- 回路 -->
+      <rect x="40" y="182" width="86" height="62" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="83" y="210" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">DDR</text>
+      <text x="83" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">重み</text>
+
+      <rect x="166" y="182" width="94" height="62" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="213" y="210" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">AXI DMA</text>
+      <text x="213" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">運搬役</text>
+
+      <rect x="300" y="172" width="148" height="82" rx="3" fill="var(--path)" fill-opacity=".14" stroke="var(--path)" stroke-width="1.8"/>
+      <text x="374" y="198" text-anchor="middle" font-size="12.5" font-weight="700" fill="var(--path)">MAC アレイ</text>
+      <text x="374" y="216" text-anchor="middle" font-size="10.5" fill="var(--path)" opacity=".9">掛け算 8 個/クロック</text>
+      <text x="374" y="234" text-anchor="middle" font-size="10.5" fill="var(--path)" opacity=".9">5 段パイプライン</text>
+
+      <rect x="488" y="182" width="80" height="62" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="528" y="218" text-anchor="middle" font-size="12.5" fill="currentColor">FIFO</text>
+
+      <rect x="608" y="182" width="112" height="62" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="664" y="210" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">DDR</text>
+      <text x="664" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">結果</text>
+
+      <line x1="128" y1="213" x2="160" y2="213" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+      <line x1="262" y1="213" x2="294" y2="213" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+      <line x1="450" y1="213" x2="482" y2="213" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+      <line x1="570" y1="213" x2="602" y2="213" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+
+      <text x="278" y="166" text-anchor="middle" font-size="10.5" fill="var(--path)">8 B/クロック</text>
+      <text x="586" y="166" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">4 B / 512 B</text>
+
+      <text x="40" y="286" font-size="12" fill="currentColor" opacity=".8">
+        結果は読みの <tspan font-family="var(--mono)" font-weight="700">0.8%</tspan> しか出ない。書き戻しても帯域はほぼ食わない
+      </text>
+      <text x="40" y="308" font-size="12" fill="var(--path)" font-weight="700">
+        実測 1.91 GB/s ＝ 計算なしの 96.7%。131,070 行すべて numpy と一致
+      </text>
+    </svg>
+    <figcaption>
+      <b>図2 ／ 捨てるだけの回路を、掛け算する回路に差し替えた。</b>
+      入力ストリームの<b>先頭 512 バイトを入力ベクトルとして取り込む</b>のがこの設計の要点で、
+      おかげで x を配るための別経路（AXI スレーブや BRAM 制御器）が丸ごと要りません。
+      計算しても帯域は <b>96.7%</b> 残りました。差の大半は結果の書き戻しで説明がつきます。
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">04</span><span>0.5 ns 足りなかった話</span></h2>
+  <p class="sub">the first build did not meet timing</p>
+
+  <p>
+    最初のビルドは<b>タイミング未達</b>で落ちました。ちょうど <span class="num">0.5 ns</span> 足りない。
+    FPGA では「1クロックの間に信号が届くか」が絶対条件で、届かなければ
+    エラーも出ずに<b>静かに間違った値</b>が流れます。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 300" role="img" aria-label="修正前は1クロックの中にカウンタ出力、配線、分散RAMの読み出し、LUTで組まれた掛け算の4つが直列に入り、合計7.39ナノ秒で7.00ナノ秒の制限を超えていた。修正後はRAM読みまでを1クロック目、掛け算を2クロック目に分け、さらに掛け算をLUTからDSPに移した結果、余裕がプラス0.062ナノ秒になった。">
+      <!-- 時間軸 -->
+      <line x1="150" y1="252" x2="720" y2="252" stroke="currentColor" stroke-width="1.2" opacity=".45"/>
+      <g font-family="var(--mono)" font-size="10" fill="currentColor" opacity=".5">
+        <text x="150" y="268" text-anchor="middle">0</text>
+        <text x="290" y="268" text-anchor="middle">2</text>
+        <text x="430" y="268" text-anchor="middle">4</text>
+        <text x="570" y="268" text-anchor="middle">6</text>
+        <text x="700" y="268" text-anchor="middle">ns</text>
+      </g>
+
+      <!-- 7.00ns の線 -->
+      <line x1="640" y1="34" x2="640" y2="258" stroke="var(--wrong)" stroke-width="2" stroke-dasharray="5 4"/>
+      <text x="640" y="26" text-anchor="middle" font-size="11" font-weight="700" fill="var(--wrong)">1クロック = 7.00 ns</text>
+
+      <!-- 修正前 -->
+      <text x="140" y="62" text-anchor="end" font-size="12.5" font-weight="700" fill="var(--wrong)">修正前</text>
+      <text x="140" y="80" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">1クロックに4つ</text>
+
+      <rect x="150" y="48" width="33" height="30" fill="currentColor" opacity=".28"/>
+      <rect x="183" y="48" width="92" height="30" fill="currentColor" opacity=".20"/>
+      <rect x="275" y="48" width="18" height="30" fill="var(--path)" opacity=".55"/>
+      <rect x="293" y="48" width="374" height="30" fill="var(--wrong)" opacity=".55"/>
+
+      <text x="166" y="100" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">カウンタ</text>
+      <text x="229" y="100" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">配線</text>
+      <text x="284" y="114" text-anchor="middle" font-size="9.5" fill="var(--path)">RAM</text>
+      <text x="480" y="100" text-anchor="middle" font-size="10.5" fill="var(--wrong)" font-weight="700">LUT で組まれた掛け算（論理 9 段）</text>
+
+      <text x="676" y="68" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">7.39</text>
+      <text x="676" y="84" font-size="10" fill="var(--wrong)">超過</text>
+
+      <line x1="150" y1="140" x2="720" y2="140" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+      <!-- 修正後 -->
+      <text x="140" y="172" text-anchor="end" font-size="12.5" font-weight="700" fill="var(--tri)">修正後</text>
+      <text x="140" y="190" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">2クロックに分割</text>
+
+      <rect x="150" y="158" width="33" height="28" fill="currentColor" opacity=".28"/>
+      <rect x="183" y="158" width="92" height="28" fill="currentColor" opacity=".20"/>
+      <rect x="275" y="158" width="18" height="28" fill="var(--path)" opacity=".55"/>
+      <text x="330" y="176" font-size="10.5" fill="currentColor" opacity=".75">← 1クロック目：ここでレジスタに受ける</text>
+
+      <rect x="150" y="200" width="196" height="28" fill="var(--tri)" opacity=".55"/>
+      <text x="248" y="219" text-anchor="middle" font-size="10.5" font-weight="700" fill="#fff">DSP の掛け算</text>
+      <text x="360" y="219" font-size="10.5" fill="currentColor" opacity=".75">← 2クロック目：LUT ではなく DSP に載せた</text>
+
+      <text x="676" y="219" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--tri)">+0.062</text>
+    </svg>
+    <figcaption>
+      <b>図3 ／ 原因は2つ重なっていた。</b>
+      ①<b>x の読み出しと掛け算を同じサイクルに詰め込んでいた</b>こと。
+      ②<b>8×8 の掛け算が「小さすぎる」と判断されて DSP に載らず、LUT で 9 段に組まれていた</b>こと。
+      段を1つ足して分離し、<code>use_dsp</code> を指定して DSP に載せたら、
+      <span class="num">−0.502 ns → +0.062 ns</span> になりました。
+      DSP は 220 個あるのに 0 個しか使われていなかった、というのが見落としの正体です。
+    </figcaption>
+  </figure>
+
+  <div class="callout fix">
+    <span class="label">この種の失敗は静かに起きる</span>
+    <p>
+      タイミング未達のまま動かすこともできました。動きはします。ただし
+      <b>データが化けても何も言わずに間違った答えを返す</b>だけです。
+      それでは「回路の論理が間違っているのか、タイミングなのか」を切り分けられなくなるので、
+      測定に進まず先に直しました。
+    </p>
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">05</span><span>段階4 ・ 積荷を小さくする</span></h2>
+  <p class="sub">three values per weight, five weights per byte</p>
+
+  <p>
+    壁は動きません。ならば<b>同じ 1 バイトからもっと多くの重みを取り出す</b>しかない。
+    これが三値化（BitNet b1.58）です。重みを <b>−1 / 0 / +1</b> の3通りに丸めてしまう。
+  </p>
+  <p>
+    3通りなら 1 個あたり <span class="num">log₂3 = 1.585</span> ビット。
+    実装上は <b>3⁵ = 243 ≤ 256</b> を使って、<b>1 バイトにちょうど 5 個</b>詰めます。
+    INT8 の 5 倍の密度です。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 400" role="img" aria-label="1バイトの値178を3進数に分解すると各桁が0,2,1,0,2となり、1を引いて三値のマイナス1、0、プラス1に対応させると重みは0、プラス1、0、マイナス1、プラス1になる。それぞれの重みは入力ベクトルの値に対してそのまま通す、ゼロにする、符号を反転する、の3択で処理され、掛け算器は使われない。最後に加算木で合計する。">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+        </marker>
+      </defs>
+
+      <!-- 1バイト -->
+      <rect x="40" y="46" width="96" height="52" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.8"/>
+      <text x="88" y="70" text-anchor="middle" font-size="15" font-weight="700" font-family="var(--mono)" fill="var(--tri)">178</text>
+      <text x="88" y="88" text-anchor="middle" font-size="10.5" fill="var(--tri)" opacity=".85">1 バイト</text>
+
+      <line x1="140" y1="72" x2="186" y2="72" stroke="currentColor" stroke-width="1.4" marker-end="url(#a2)"/>
+      <text x="163" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">表引き</text>
+
+      <!-- 3進の桁 -->
+      <text x="196" y="36" font-size="11.5" fill="currentColor" opacity=".7">3 進数の各桁（178 = 1 + 2·3 + 1·9 + 0·27 + 2·81）</text>
+      <g font-family="var(--mono)" font-size="14" font-weight="700">
+        <rect x="196" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="222" y="78" text-anchor="middle" fill="currentColor">1</text>
+        <rect x="256" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="282" y="78" text-anchor="middle" fill="currentColor">2</text>
+        <rect x="316" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="342" y="78" text-anchor="middle" fill="currentColor">1</text>
+        <rect x="376" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="402" y="78" text-anchor="middle" fill="currentColor">0</text>
+        <rect x="436" y="46" width="52" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+        <text x="462" y="78" text-anchor="middle" fill="currentColor">2</text>
+      </g>
+
+      <line x1="500" y1="72" x2="546" y2="72" stroke="currentColor" stroke-width="1.4" marker-end="url(#a2)"/>
+      <text x="523" y="62" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">−1</text>
+
+      <text x="556" y="66" font-size="12" fill="currentColor">桁 − 1 で</text>
+      <text x="556" y="84" font-size="12" font-weight="700" fill="var(--tri)">三値になる</text>
+
+      <!-- 三値 -->
+      <text x="196" y="130" font-size="11.5" fill="currentColor" opacity=".7">重み（三値）</text>
+      <g font-family="var(--mono)" font-size="15" font-weight="700">
+        <rect x="196" y="140" width="52" height="46" rx="3" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1.2"/>
+        <text x="222" y="169" text-anchor="middle" fill="currentColor" opacity=".5">0</text>
+        <rect x="256" y="140" width="52" height="46" rx="3" fill="var(--tri)" fill-opacity=".2" stroke="var(--tri)" stroke-width="1.4"/>
+        <text x="282" y="169" text-anchor="middle" fill="var(--tri)">+1</text>
+        <rect x="316" y="140" width="52" height="46" rx="3" fill="currentColor" fill-opacity=".08" stroke="currentColor" stroke-width="1.2"/>
+        <text x="342" y="169" text-anchor="middle" fill="currentColor" opacity=".5">0</text>
+        <rect x="376" y="140" width="52" height="46" rx="3" fill="var(--ddr)" fill-opacity=".2" stroke="var(--ddr)" stroke-width="1.4"/>
+        <text x="402" y="169" text-anchor="middle" fill="var(--ddr)">−1</text>
+        <rect x="436" y="140" width="52" height="46" rx="3" fill="var(--tri)" fill-opacity=".2" stroke="var(--tri)" stroke-width="1.4"/>
+        <text x="462" y="169" text-anchor="middle" fill="var(--tri)">+1</text>
+      </g>
+
+      <!-- x -->
+      <text x="196" y="216" font-size="11.5" fill="currentColor" opacity=".7">入力ベクトル x</text>
+      <g font-family="var(--mono)" font-size="13">
+        <rect x="196" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="222" y="251" text-anchor="middle" fill="currentColor">x₀</text>
+        <rect x="256" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="282" y="251" text-anchor="middle" fill="currentColor">x₁</text>
+        <rect x="316" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="342" y="251" text-anchor="middle" fill="currentColor">x₂</text>
+        <rect x="376" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="402" y="251" text-anchor="middle" fill="currentColor">x₃</text>
+        <rect x="436" y="226" width="52" height="40" rx="3" fill="none" stroke="currentColor" stroke-width="1"/>
+        <text x="462" y="251" text-anchor="middle" fill="currentColor">x₄</text>
+      </g>
+
+      <!-- 項 -->
+      <text x="196" y="296" font-size="11.5" fill="currentColor" opacity=".7">出てくる項 ── 掛け算ではなく 3 択</text>
+      <g font-family="var(--mono)" font-size="13" font-weight="700">
+        <rect x="196" y="306" width="52" height="40" rx="3" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1"/>
+        <text x="222" y="331" text-anchor="middle" fill="currentColor" opacity=".5">0</text>
+        <rect x="256" y="306" width="52" height="40" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="282" y="331" text-anchor="middle" fill="var(--tri)">+x₁</text>
+        <rect x="316" y="306" width="52" height="40" rx="3" fill="currentColor" fill-opacity=".06" stroke="currentColor" stroke-width="1"/>
+        <text x="342" y="331" text-anchor="middle" fill="currentColor" opacity=".5">0</text>
+        <rect x="376" y="306" width="52" height="40" rx="3" fill="var(--ddr)" fill-opacity=".18" stroke="var(--ddr)" stroke-width="1.2"/>
+        <text x="402" y="331" text-anchor="middle" fill="var(--ddr)">−x₃</text>
+        <rect x="436" y="306" width="52" height="40" rx="3" fill="var(--tri)" fill-opacity=".18" stroke="var(--tri)" stroke-width="1.2"/>
+        <text x="462" y="331" text-anchor="middle" fill="var(--tri)">+x₄</text>
+      </g>
+
+      <line x1="500" y1="326" x2="546" y2="326" stroke="currentColor" stroke-width="1.4" marker-end="url(#a2)"/>
+      <rect x="552" y="300" width="168" height="52" rx="3" fill="none" stroke="currentColor" stroke-width="1.3"/>
+      <text x="636" y="322" text-anchor="middle" font-size="12.5" font-weight="700" fill="currentColor">加算木</text>
+      <text x="636" y="340" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">40 項 → 1 個</text>
+
+      <line x1="40" y1="370" x2="720" y2="370" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="392" font-size="12.5" font-weight="700" fill="var(--tri)">
+        「そのまま通す・ゼロにする・符号を反転する」——ここに掛け算器は 1 個も出てこない
+      </text>
+    </svg>
+    <figcaption>
+      <b>図4 ／ 掛け算が 3 択に化ける。</b>
+      重みが −1 / 0 / +1 しかないので、<b>掛け算という演算がそもそも発生しません</b>。
+      必要なのは選ぶことと符号を反転すること、そして足すことだけ。
+      これが「DSP ではなく LUT で作る」ことの中身です。
+      1 ビート 8 バイトから <b>40 個</b>の項が出るので、40 項の加算木が要ります
+      （手書きすると必ず間違えるので、生成スクリプトから書き出しました）。
+    </figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">06</span><span>掛け算器が消えた</span></h2>
+  <p class="sub">what it cost in silicon</p>
+
+  <p>
+    段階3と段階4で、チップの資源をどう使ったかを並べます。
+    <b>この比較がこの計画でいちばん言いたかったこと</b>です。
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 320" role="img" aria-label="段階3のINT8版と段階4の三値版の資源比較。LUTは8175から9557へ17パーセント増えただけ。DSPは20個から0個になった。重みの流量は毎秒1.91ギガ個から9.16ギガ個へ4.8倍。少しのLUTと引き換えに掛け算器を全部手放して、性能が桁で上がった。">
+      <!-- LUT -->
+      <text x="40" y="38" font-size="12.5" font-weight="700" fill="currentColor">LUT</text>
+      <text x="86" y="38" font-size="11" fill="currentColor" opacity=".55">全 53,200 個</text>
+      <rect x="180" y="24" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="24" width="68" height="18" rx="2" fill="var(--path)" opacity=".75"/>
+      <text x="630" y="38" font-size="11.5" font-family="var(--mono)" fill="var(--path)">8,175 (15%)</text>
+
+      <rect x="180" y="52" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="52" width="79" height="18" rx="2" fill="var(--tri)" opacity=".8"/>
+      <text x="630" y="66" font-size="11.5" font-family="var(--mono)" fill="var(--tri)">9,557 (18%)</text>
+      <text x="40" y="66" font-size="11" fill="currentColor" opacity=".55">＋1,382 だけ</text>
+
+      <line x1="40" y1="94" x2="720" y2="94" stroke="currentColor" stroke-width="1" opacity=".14"/>
+
+      <!-- DSP -->
+      <text x="40" y="128" font-size="12.5" font-weight="700" fill="currentColor">DSP</text>
+      <text x="86" y="128" font-size="11" fill="currentColor" opacity=".55">全 220 個</text>
+      <rect x="180" y="114" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="114" width="40" height="18" rx="2" fill="var(--path)" opacity=".75"/>
+      <text x="630" y="128" font-size="11.5" font-family="var(--mono)" fill="var(--path)">20 (9%)</text>
+
+      <rect x="180" y="142" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <text x="630" y="156" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--tri)">0</text>
+      <text x="188" y="156" font-size="11" fill="var(--tri)" font-weight="700">1 個も使わない</text>
+
+      <line x1="40" y1="184" x2="720" y2="184" stroke="currentColor" stroke-width="1" opacity=".14"/>
+
+      <!-- 流量 -->
+      <text x="40" y="218" font-size="12.5" font-weight="700" fill="currentColor">重みの流量</text>
+      <text x="120" y="218" font-size="11" fill="currentColor" opacity=".55">G重み/s</text>
+      <rect x="180" y="204" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="204" width="92" height="18" rx="2" fill="var(--path)" opacity=".75"/>
+      <text x="630" y="218" font-size="11.5" font-family="var(--mono)" fill="var(--path)">1.91</text>
+
+      <rect x="180" y="232" width="440" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+      <rect x="180" y="232" width="440" height="18" rx="2" fill="var(--tri)" opacity=".8"/>
+      <text x="630" y="246" font-size="11.5" font-family="var(--mono)" font-weight="700" fill="var(--tri)">9.16</text>
+
+      <line x1="40" y1="274" x2="720" y2="274" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="296" font-size="12.5" fill="currentColor">
+        <tspan fill="var(--path)" font-weight="700">■ 段階3 INT8</tspan>
+        <tspan fill="currentColor" opacity=".5">　／　</tspan>
+        <tspan fill="var(--tri)" font-weight="700">■ 段階4 三値</tspan>
+        <tspan fill="currentColor" opacity=".75">　── LUT を 17% 増やして、掛け算器を全部手放して、4.8 倍</tspan>
+      </text>
+    </svg>
+    <figcaption>
+      <b>図5 ／ 少しの LUT と引き換えに、掛け算器を全部手放した。</b>
+      <b>220 個の DSP を持つチップで、本命の回路が DSP を 1 個も使っていません。</b>
+      計画の最初に立てた「律速は帯域であって演算器の数ではない」という読みが、
+      最後まで正しかったということです。
+    </figcaption>
+  </figure>
+
+  <div class="tbl-scroll">
+  <table>
+    <thead>
+      <tr><th>段階</th><th>演算器</th><th>読み出し</th><th>重みの流量</th><th>DSP</th><th>LUT</th><th>照合</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>2 ・ 計算なし</td><td>—</td><td>1.97</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>3 ・ INT8</td><td>16</td><td>1.91</td><td>1.91</td><td>20</td><td>8,175</td><td>131,070 行</td></tr>
+      <tr class="hit"><td><strong>4 ・ 三値</strong></td><td>80</td><td>1.83</td><td><strong>9.16</strong></td><td><strong>0</strong></td><td>9,557</td><td>524,278 行</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <p>
+    照合の欄は <b>PL が出した答えを 1 行残らず numpy と突き合わせた</b>結果です。
+    速いが壊れている、では意味がないので、全段階でこれをやりました。
+    実際、生成スクリプトのパイプライン段数が 1 つずれていたバグは、
+    <b>この照合がなければ見つかりませんでした</b>——動きはするが答えが全部違う、という形で出るからです。
+  </p>
+</section>
+
+<!-- ============================================================ -->
+<section>
+  <h2><span class="n">07</span><span>まだ出来ていないこと</span></h2>
+  <p class="sub">what this is not, yet</p>
+
+  <p>
+    この速度なら、135M パラメータを三値化したモデル（重み 27 MB）は
+    <b>1 トークンあたり 14.7 ms ＝ 約 68 tok/s</b> という計算になります。
+    <b>ただしこれは行列積だけの上限</b>で、attention・layernorm・softmax・KV キャッシュは
+    まだ何も作っていません。
+  </p>
+  <p>
+    そこで<b>「残りがどれくらい重いのか」を実測しました</b>（2026-09-13 追記）。
+    SmolLM2-135M の実寸法で、行列積以外を C で書いてボードの CPU で走らせた結果です。
+    <b>予想より遥かに重く、計画の前提が変わりました。</b>
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 760 250" role="img" aria-label="1トークンにかかる時間の内訳を文脈長ごとに100パーセントで正規化した図。文脈128では行列積が38パーセント、アテンションが50パーセントで毎秒26.2トークン。文脈512では行列積14パーセント、アテンション82パーセントで毎秒9.8トークン。文脈2048では行列積4パーセント、アテンション95パーセントで毎秒2.8トークン。文脈が伸びるほどCPUのアテンションが全体を占め、PLの貢献が薄まる。">
+      <text x="40" y="28" font-size="13" font-weight="700" fill="currentColor">1 トークンの時間の内訳（100% に正規化）</text>
+
+      <g font-size="11.5">
+        <rect x="40" y="44" width="16" height="10" fill="var(--tri)" opacity=".8"/>
+        <text x="62" y="53" fill="currentColor" opacity=".8">行列積（PL）</text>
+        <rect x="170" y="44" width="16" height="10" fill="var(--wrong)" opacity=".7"/>
+        <text x="192" y="53" fill="currentColor" opacity=".8">attention（CPU）</text>
+        <rect x="316" y="44" width="16" height="10" fill="currentColor" opacity=".28"/>
+        <text x="338" y="53" fill="currentColor" opacity=".8">小物（CPU）</text>
+      </g>
+
+      <text x="180" y="92" text-anchor="end" font-size="12.5" fill="currentColor">文脈 128</text>
+      <rect x="190" y="72" width="185" height="30" fill="var(--tri)" opacity=".8"/>
+      <rect x="375" y="72" width="242" height="30" fill="var(--wrong)" opacity=".7"/>
+      <rect x="617" y="72" width="53" height="30" fill="currentColor" opacity=".28"/>
+      <text x="684" y="92" font-size="12" font-family="var(--mono)" font-weight="700" fill="currentColor">26.2 tok/s</text>
+
+      <text x="180" y="140" text-anchor="end" font-size="12.5" fill="currentColor">文脈 512</text>
+      <rect x="190" y="120" width="69" height="30" fill="var(--tri)" opacity=".8"/>
+      <rect x="259" y="120" width="391" height="30" fill="var(--wrong)" opacity=".7"/>
+      <rect x="650" y="120" width="20" height="30" fill="currentColor" opacity=".28"/>
+      <text x="684" y="140" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">9.8 tok/s</text>
+
+      <text x="180" y="188" text-anchor="end" font-size="12.5" fill="currentColor">文脈 2048</text>
+      <rect x="190" y="168" width="20" height="30" fill="var(--tri)" opacity=".8"/>
+      <rect x="210" y="168" width="455" height="30" fill="var(--wrong)" opacity=".7"/>
+      <rect x="665" y="168" width="5" height="30" fill="currentColor" opacity=".28"/>
+      <text x="684" y="188" font-size="12" font-family="var(--mono)" font-weight="700" fill="var(--wrong)">2.8 tok/s</text>
+
+      <line x1="40" y1="216" x2="720" y2="216" stroke="currentColor" stroke-width="1" opacity=".18"/>
+      <text x="40" y="238" font-size="12" fill="currentColor" opacity=".8">
+        行列積は文脈長に依存しない（つねに 14.68 ms）。attention だけが比例して増える
+      </text>
+    </svg>
+    <figcaption>
+      <b>図6 ／ 速くした部分が、全体に占める割合の話。</b>
+      緑がこの資料で作ってきた回路の担当ぶんです。
+      <b>文脈が伸びるほど緑が痩せていきます</b>——行列積は文脈長に依存しないのに、
+      attention は比例して増えるからです。文脈 2048 では PL の担当は <b>4%</b>。
+      ここまで来ると、回路があってもほとんど効きません。
+    </figcaption>
+  </figure>
+
+  <div class="callout fix">
+    <span class="label">2026-09-13 追記 — 「行列積は PL、残りは CPU」は成立しない</span>
+    <p>
+      文脈 512 で <b>attention だけで 83 ms</b>。行列積の 14.68 ms の <b>5.7 倍</b>です。
+      系全体では <b>9.8 tok/s</b> にしかならず、68 tok/s の 7 分の 1 になります。
+    </p>
+    <p>
+      <b>実装が下手なわけではありません。</b>素朴に float 変換する版は 158 ms でしたが、
+      INT8 のまま計算しても 83 ms で、実効 <span class="num">0.21 G MAC/s</span>。
+      これは CPU の INT8 内積の実測上限 0.28 G MAC/s に近く、
+      <b>Cortex-A9 の素の性能</b>です。書き直しても縮みません。
+    </p>
+  </div>
+
+  <p>
+    <b>やることは決まりました。attention も回路にします。</b>
+    幸い、作るものは今あるエンジンとほぼ同じです——<b>KV キャッシュは INT8 の別のストリーム</b>で、
+    QK<sup>T</sup> も AV も内積でしかありません。
+  </p>
+  <p>
+    サイズだけが違います。GQA で <b>K/V の 3 ヘッドを 9 ヘッドで共有する</b>ので、
+    1 バイトあたり <span class="num">3.15 回</span>の再利用があります（行列積は 1 回でした）。
+    つまり <b>MAC は 48 個</b>欲しい——それでも DSP 220 個のうち 2 割ちょっとです。
+    softmax の <code>exp</code> も BRAM の表引きにすれば回路に載ります。
+  </p>
+
+  <div class="callout win">
+    <span class="label">そこまでやるとどうなるか（試算）</span>
+    <p>
+      attention が帯域律速になって文脈 512 で <b>2.94 ms</b>。
+      予算は <span class="num">14.68 + 2.94 + 4.2 ≒ 21.8 ms</span> で <b>約 46 tok/s</b>。
+      しかも <b>文脈が伸びても崩れにくくなります</b>——
+      KV キャッシュの読み出しにも PL の帯域の優位がそのまま効くからです。
+    </p>
+  </div>
+
+  <p>そのあとに残るのは、こういうものです。</p>
+  <ul>
+    <li><b>小物 4.2 ms</b>（RMSNorm・RoPE・SiLU・残差）。文脈長に依存しない固定費で、
+        attention を片付けると次はこれが 2 割を占める</li>
+    <li><b>実モデルの重みを流す</b>。いまはランダムな三値で試しているので、
+        本物の SmolLM2-135M を三値化して同じ回路に通す</li>
+    <li><b>CPU 側のベースラインを取り直す</b>。比較に使っている 2.8 tok/s は素朴なループの値なので、
+        llama.cpp のような実用実装で測り直さないとフェアではない</li>
+  </ul>
+</section>
+
+<footer>
+  PYNQ-Z1 / XC7Z020-1CLG400C @ 142.86 MHz ・ Vivado 2024.1（Docker + Rosetta 2）・ PYNQ 3.1.1<br>
+  数値はすべて実機での実測（32 MB × 5 回の最速値）。試算と明記したもの以外は実測です。<br>
+  前段の記録: <a href="02-two-ceilings.html">二つの天井（段階2）</a>
+  ／ <a href="01-cpu-to-fabric.html">CPU からファブリックへ（入口・FPGA初心者向け）</a>
+</footer>
+
+</div>
+<!-- nav -->
+<nav class="jnav foot" aria-label="開発記録のナビゲーション">
+  <a href="../index.html">開発記録の目次</a>
+  <a href="02-two-ceilings.html" rel="prev">← 前: 二つの天井</a>
+  <a href="04-reaching-the-wall.html" rel="next">次: 壁に届いた →</a>
+  <a class="lang" href="../en/03-the-wall-does-not-move.html" hreflang="en" lang="en">English</a>
+</nav>
+<!-- /nav -->
+</body>
+</html>
