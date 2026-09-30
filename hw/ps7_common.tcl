@@ -8,6 +8,13 @@
 #  呼ぶ側で以下を先に定義しておくこと:
 #    $fclk … FCLK_CLK0 の要求周波数 (MHz)
 #  呼んだあと $ps7_0 にセル名が入る。
+#  ---------------------------------------------------------------------
+#  PS7 configuration properties taken unchanged from Xilinx/PYNQ
+#  boards/Pynq-Z1/base/base.tcl:
+#    Copyright (c) 2016-2021, Xilinx, Inc.
+#    SPDX-License-Identifier: BSD-3-Clause
+#  Full license text: THIRD_PARTY_NOTICES.md at the repository root.
+#  The rest of this file is MIT-licensed (LICENSE).
 # =====================================================================
 
 # ---------- PS7 ----------

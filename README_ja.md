@@ -255,6 +255,12 @@ hw/out/combo3_125.*      ビルド済みのビットストリームとハード�
 
 ## ライセンス
 
-MIT（[LICENSE](LICENSE)）。モデルの重みは含みません。`pack_e2e.py` が Hugging Face から落とし、
-重みにはそのモデル自身のライセンスが適用されます。`hw/ps7_common.tcl` の PS7 の設定は、
-[Xilinx/PYNQ](https://github.com/Xilinx/PYNQ) の PYNQ-Z1 base overlay から取ったものです（BSD 3-Clause）。
+このリポジトリのために書いたコードと文書は MIT（[LICENSE](LICENSE)）です。
+次の 3 つは MIT の対象外です。詳細は [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) にあります。
+
+- **PS7 の設定**（`hw/ps7_common.tcl` と `hw/build.tcl`）。[Xilinx/PYNQ](https://github.com/Xilinx/PYNQ) の
+  PYNQ-Z1 base overlay から取ったもので、BSD 3-Clause です
+- **ビルド済みのビットストリームと Vivado の生成物**（`hw/out/`）。AMD/Xilinx の IP を含み、その部分は
+  AMD の条件に従います。PYNQ-Z1 で使うために置いています
+- **モデルの重み**。リポジトリには含みません。`pack_e2e.py` が Hugging Face から落とし、そのモデル自身の
+  ライセンスが適用されます

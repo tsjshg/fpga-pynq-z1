@@ -263,7 +263,13 @@ The illustrated write-ups of every stage are in [`docs/`](docs/), published at <
 
 ## License
 
-MIT (see [LICENSE](LICENSE)). The model weights are not included. `pack_e2e.py` downloads them
-from Hugging Face, and they are covered by that model's own license. The PS7 configuration in
-`hw/ps7_common.tcl` is taken from the PYNQ-Z1 base overlay of
-[Xilinx/PYNQ](https://github.com/Xilinx/PYNQ) (BSD 3-Clause).
+The code and documents written for this repository are MIT-licensed (see [LICENSE](LICENSE)).
+Three things are not covered by it. [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) has the
+details:
+
+- **PS7 configuration** in `hw/ps7_common.tcl` and `hw/build.tcl`. It comes from the PYNQ-Z1 base
+  overlay of [Xilinx/PYNQ](https://github.com/Xilinx/PYNQ) and is BSD 3-Clause.
+- **The prebuilt bitstream and other Vivado outputs** in `hw/out/`. They contain AMD/Xilinx IP,
+  which stays under AMD's terms. They are provided for use on the PYNQ-Z1.
+- **Model weights.** They are not included. `pack_e2e.py` downloads them from Hugging Face, and
+  the model's own license applies.

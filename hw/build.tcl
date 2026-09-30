@@ -8,6 +8,13 @@
 #  boards/Pynq-Z1/base/base.tcl) から抜き出したものをそのまま使う。
 #
 #  使い方: vivado -mode batch -source build.tcl -tclargs <bd|all>
+#  ---------------------------------------------------------------------
+#  PS7 configuration properties taken unchanged from Xilinx/PYNQ
+#  boards/Pynq-Z1/base/base.tcl:
+#    Copyright (c) 2016-2021, Xilinx, Inc.
+#    SPDX-License-Identifier: BSD-3-Clause
+#  Full license text: THIRD_PARTY_NOTICES.md at the repository root.
+#  The rest of this file is MIT-licensed (LICENSE).
 # =====================================================================
 set stage "bd"
 if {$argc > 0} { set stage [lindex $argv 0] }
