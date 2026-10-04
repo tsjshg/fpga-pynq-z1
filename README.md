@@ -236,6 +236,11 @@ On an Apple Silicon Mac, Vivado can run in Docker via
 starts a container that mounts both that installation and `hw/`, and then runs the build (for
 example `hw/vivado.sh build build_combo3.tcl bd 125`).
 
+To build your own circuits on a Mac with this setup, see
+[fpga-mac](https://github.com/tsjshg/fpga-mac). It has a general-purpose version of `vivado.sh`, a
+PYNQ-Z1 project template that builds and runs as is, and the lessons learned here, rewritten to
+apply to any circuit.
+
 ## Repository layout
 
 ```

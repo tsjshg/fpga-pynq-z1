@@ -228,6 +228,10 @@ Apple Silicon の Mac では、[vivado-on-silicon-mac](https://github.com/ichi40
 Vivado を Docker の中で動かせます。`hw/vivado.sh` は、そのインストール先と `hw/` の両方を載せたコンテナを立てて
 ビルドを流します（例: `hw/vivado.sh build build_combo3.tcl bd 125`）。
 
+この仕組みで自分の回路を Mac で作りたいときは、[fpga-mac](https://github.com/tsjshg/fpga-mac) を見てください。
+汎用にした `vivado.sh`、そのままビルドして動かせる PYNQ-Z1 のひな形、それにここで踏んだ罠を
+どの回路にも使える形にまとめ直したものがあります。
+
 ## ファイルの構成
 
 ```
